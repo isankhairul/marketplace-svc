@@ -1,6 +1,6 @@
-# klikmedis-svc
+# marketplace-svc
 
-KlikMedis Service
+Marketplace Service
 
 This is boilerplate for klikdokter microservice, it's use go-kit as our base library
 The example to use this boilerplate please see this code
