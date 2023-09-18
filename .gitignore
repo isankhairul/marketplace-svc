@@ -1,0 +1,50 @@
+# ---> Go
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+.vscode/*
+.idea/*
+*.db
+
+# another file do not saved
+*.rar
+*.zip
+*.tar.gz
+*.tar.bz2
+*.gzip  
+*.7z
+*.csv
+*.xls  
+*.xlsx
+*.log
+*.db
+local.db
+test.db
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+db/*.yml
+log
+logs
+vendor
+vendor/*
+
+*.DS_Store
+*.code-workspace
+
+docker-compose.yml
+config-test.yml
+config-dev.yml
+config-prd.yml
+boilerplate
+vendor
+docker/development
+.air.toml
+tmp

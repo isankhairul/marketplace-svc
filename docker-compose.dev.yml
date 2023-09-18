@@ -1,0 +1,12 @@
+version: '3.0'
+services:
+  app:
+    container_name: klikmedis-svc
+    image: klikmedis-svc
+    build:
+      context: .
+      dockerfile: ./docker/development/Dockerfile.dev
+    volumes: 
+      - .:/app
+    ports: 
+      - 5600:5600

@@ -1,0 +1,74 @@
+#database settings
+database:
+  driver: postgres
+  host: db-marketplace.klikdokter-stg.int
+  port: 5432
+  username: marketplace_user
+  password: 
+  dbname: marketplace
+  schemaname: public
+  logger:
+    level: error #silent, error, warn, info
+    slow-threshold: 200 #Slow SQL threshold
+    ignore-not-found: true #Ignore ErrRecordNotFound error for logger
+
+redis-database:
+  host: localhost
+  port: 6379
+  password: redis
+  is-use: true
+  index:
+  default-expiry:
+
+kafka:
+  bootstrap-servers: 172.22.199.109:9092
+  prefix-topic: local-mp
+  auto-offset: beginning
+  max-pool-interval: 600000
+
+url:
+  baseurl: /v3/marketplace/
+  baseprefix: /v3/marketplace/
+
+server:
+  port: 5700
+  env: dev
+  log:
+    level: info #debug, info, warn, error.
+    output: console
+    file-path: ./kd-microservice.log
+
+security:
+  jwt:
+    key: abcdefgh1234
+    skip-validation: false
+    ttl: 86400 # in seconds
+    refresh-ttl: 2592000 # in seconds
+    cache-login-ttl: 43200 # in minutes
+  firebase:
+    salt: P@ssw0rdnyaJ4ncUk
+    iteration: 20000
+    key-len: 30
+
+kalcare-api:
+  server: https://kd-api.medkomtek-stg.com/mp/v3
+  endpoint_auth: /auth/cms
+  endpoint_queue: /temp_order_status_queue
+  endpoint_webhook: /registered_webhook
+  user_cred:
+  pass_cred:
+  client_id: "client.cms-mocha-stg.backoffice"
+  cancel-hours: 0
+  cancel-minutes: 1
+  post-interval: 2
+  post-minutes: 5
+
+micro-service:
+  base-url: https://api.medkomtek.net/eks-micro-service
+  api-key: TUfDhxqRXRV6cyAmvrSj9q2GCdTMrPKPgFTSvQ7VUB8UBZ3LzJ
+  sms-path-url: /queue/job
+
+icons:
+  info: "https://s3-publishing-cmn-svc-prd.s3.ap-southeast-1.amazonaws.com/assets/icon/klikmedis/notification/lonceng.svg"
+  chat: "https://s3-publishing-cmn-svc-prd.s3.ap-southeast-1.amazonaws.com/assets/icon/klikmedis/notification/chat.svg"
+  video-call: "https://s3-publishing-cmn-svc-prd.s3.ap-southeast-1.amazonaws.com/assets/icon/klikmedis/notification/video-call.svg"
