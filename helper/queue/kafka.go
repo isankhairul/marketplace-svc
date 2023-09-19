@@ -19,7 +19,7 @@ type handlerMessageSubscriber func(*kafka.Message)
 
 func NewKafkaConsumer(cfg config.Config, log logger.Logger, groupID string) (*KafkaBase, error) {
 	// add prefix topic
-	groupID = "golang." + cfg.Kafka.PrefixTopic + "." + groupID
+	groupID = cfg.Kafka.PrefixTopic + "." + groupID
 
 	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": cfg.Kafka.BootstrapServers,
