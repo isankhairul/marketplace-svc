@@ -67,9 +67,9 @@ func NewViper(opt *KDOption) *viper.Viper {
 		// custom configFileName for testing
 		configFileName = *opt.ConfigFilename
 	} else {
-		profile := "dev"
-		if os.Getenv("KD_ENV") == "prd" || os.Getenv("KD_ENV") == "stg" {
-			profile = "prd"
+		profile := "prd"
+		if os.Getenv("KD_ENV") == "dev" || os.Getenv("KD_ENV") == "stg" {
+			profile = "dev"
 		}
 		configFileName = configFileName + "config-" + profile
 	}
