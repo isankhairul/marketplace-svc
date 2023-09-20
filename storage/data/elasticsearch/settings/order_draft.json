@@ -1,0 +1,332 @@
+{
+    "mappings": {
+        "properties": {
+            "contact_id": {
+                "type": "keyword"
+            },
+            "created_at": {
+                "type": "date",
+                "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+            },
+            "customer_id": {
+                "type": "long"
+            },
+            "event": {
+                "type": "integer"
+            },
+            "discount_amount": {
+                "type": "integer"
+            },
+            "grand_total": {
+                "type": "integer"
+            },
+            "id": {
+                "type": "long"
+            },
+            "store_id": {
+                "type": "integer",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "items": {
+                "type": "nested",
+                "properties": {
+                    "city": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "merchant_id": {
+                        "type": "long"
+                    },
+                    "merchant_name": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "product_id": {
+                        "type": "long"
+                    },
+                    "product_name": {
+                        "type": "text"
+                    },
+                    "products": {
+                        "properties": {
+                            "product_id": {
+                                "type": "long"
+                            },
+                            "product_name": {
+                                "type": "text",
+                                "fields": {
+                                    "keyword": {
+                                        "type": "keyword",
+                                        "ignore_above": 256
+                                    }
+                                }
+                            },
+                            "merchant_sku": {
+                                "type": "text",
+                                "fields": {
+                                    "keyword": {
+                                        "type": "keyword",
+                                        "ignore_above": 256
+                                    }
+                                }
+                            },
+                            "quantity_ordered": {
+                                "type": "long"
+                            },
+                            "total_product_price": {
+                                "type": "long"
+                            },
+                            "redeem": {
+                                "type": "boolean"
+                            },
+                            "event": {
+                                "type": "boolean"
+                            },
+                            "free_product": {
+                                "type": "boolean"
+                            }
+                        }
+                    },
+                    "province": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "quantity_ordered": {
+                        "type": "integer"
+                    },
+                    "total_product_price": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "order_parent_no": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "payment_code": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "payment_method": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "payment_method_id": {
+                "type": "integer"
+            },
+            "payment_method_type_code": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "reference_payment_no": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "repay": {
+                "properties": {
+                    "Amount": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "BackendUrl": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "Currency": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "Lang": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "MerchantCode": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "PaymentId": {
+                        "type": "long"
+                    },
+                    "ProdDesc": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "RefNo": {
+                        "type": "long"
+                    },
+                    "Remark": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "ResponseUrl": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "Signature": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "UserContact": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "UserEmail": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "UserName": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "host": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "paymentCode": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    }
+                }
+            },
+            "shipping_amount": {
+                "type": "integer"
+            },
+            "shipping_discount_amount": {
+                "type": "integer"
+            },
+            "subtotal": {
+                "type": "integer"
+            },
+            "total_point_bonus": {
+                "type": "integer"
+            },
+            "total_quantity": {
+                "type": "integer"
+            },
+            "transaction_expiry_date": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            }
+        }
+    }
+}

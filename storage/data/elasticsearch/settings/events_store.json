@@ -1,0 +1,155 @@
+{
+    "settings": {
+      "analysis": {
+        "analyzer": {
+          "search_term_analyzer": {
+            "type": "custom",
+            "stopwords": "_none_",
+            "filter": [
+              "lowercase",
+              "asciifolding",
+              "no_stop"
+            ],
+            "tokenizer": "whitespace"
+          },
+          "ngram_token_analyzer": {
+            "type": "custom",
+            "stopwords": "_none_",
+            "filter": [
+              "lowercase",
+              "asciifolding",
+              "no_stop",
+              "ngram_filter"
+            ],
+            "tokenizer": "whitespace"
+          }
+        },
+        "filter": {
+          "no_stop": {
+            "type": "stop",
+            "stopwords": "_none_"
+          },
+          "ngram_filter": {
+            "type": "ngram",
+            "min_gram": "4",
+            "max_gram": "4"
+          }
+        }
+      }
+    },
+    "mappings": {
+      "properties": {
+        "title": {
+          "type": "text",
+          "analyzer": "ngram_token_analyzer",
+          "search_analyzer": "ngram_token_analyzer",
+          "fields": {
+            "raw": {
+              "type": "keyword"
+            }
+          }
+        },
+        "sku": {
+          "type": "keyword"
+        },
+        "slug": {
+          "type": "keyword"
+        },
+        "event_type": {
+          "type": "keyword"
+        },
+        "base_point": {
+          "type": "float"
+        },
+        "base_point_rupiah": {
+          "type": "long"
+        },
+        "start_date": {
+          "type": "date",
+          "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+        },
+        "end_date": {
+          "type": "date",
+          "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+        },
+        "created_at": {
+          "type": "date",
+          "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+        },
+        "updated_at": {
+          "type": "date",
+          "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+        },
+        "completion_terms": {
+          "type": "text",
+          "analyzer": "standard"
+        },
+        "full_text_search": {
+          "type": "text",
+          "analyzer": "search_term_analyzer",
+          "search_analyzer": "search_term_analyzer"
+        },
+        "categories": {
+          "type": "nested",
+          "properties": {
+            "slug": {
+              "type": "keyword"
+            }
+          }
+        },
+        "variants": {
+          "type": "nested",
+          "properties": {
+            "slug": {
+              "type": "keyword"
+            }
+          }
+        },
+        "merchants": {
+          "type": "nested",
+          "properties": {
+            "code": {
+              "type": "keyword"
+            },
+            "slug": {
+              "type": "keyword"
+            },
+            "merchant_sku": {
+              "type": "keyword"
+            },
+            "events_sku": {
+              "type": "keyword"
+            },
+            "zipcode": {
+              "type": "keyword"
+            },
+            "rating": {
+              "type": "float"
+            },
+            "sold": {
+              "type": "long"
+            },
+            "selling_price": {
+              "type": "long"
+            },
+            "special_prices": {
+              "type": "nested",
+              "properties": {
+                "price": {
+                  "type": "long"
+                },
+                "from_time": {
+                  "type": "date",
+                  "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+                },
+                "to_time": {
+                  "type": "date",
+                  "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }

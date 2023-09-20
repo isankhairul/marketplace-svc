@@ -1,0 +1,15 @@
+{
+    "mappings": {
+        "properties": {
+            "zipcode": {
+                "type": "keyword"
+            },
+            "merchant_id": {
+                "type": "long"
+            },
+            "priority": {
+                "type": "long"
+            }
+        }
+    }
+}

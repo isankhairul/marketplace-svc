@@ -29,7 +29,7 @@ func (app *Infra) LogWithContext(ctx context.Context) logger.Logger {
 	return app.Log.WithContext(ctx)
 }
 
-func (app *Infra) EnableLog() *Infra {
+func (app *Infra) WithLog() *Infra {
 	log, err := logger.NewLogger(
 		logger.NewGoKitLog(&logger.LogConfig{
 			Level: app.Config.Server.LogConfig.Level,
@@ -43,7 +43,7 @@ func (app *Infra) EnableLog() *Infra {
 	return app
 }
 
-func (app *Infra) EnableDB() *Infra {
+func (app *Infra) WithDB() *Infra {
 	//Init DB Connection
 	migration := &db.Option{Migrate: []interface{}{}}
 	initDB, err := db.NewDatabaseConnect(&app.Config.DB, migration)
@@ -54,7 +54,7 @@ func (app *Infra) EnableDB() *Infra {
 	return app
 }
 
-func (app *Infra) EnableKafkaProducer() *Infra {
+func (app *Infra) WithKafkaProducer() *Infra {
 	kafkaProducer, err := queue.NewKafkaProducer(*app.Config)
 	if err != nil {
 		panic(err.Error())
@@ -63,8 +63,8 @@ func (app *Infra) EnableKafkaProducer() *Infra {
 	return app
 }
 
-func (app *Infra) EnableElasticClient() *Infra {
-	ec, err := elastic.NewElasticClient(&app.Config.ElasticSearch)
+func (app *Infra) WithElasticClient() *Infra {
+	ec, err := elastic.NewElasticClient(&app.Config.Elastic, app.Log)
 	if err != nil {
 		panic(err.Error())
 	}

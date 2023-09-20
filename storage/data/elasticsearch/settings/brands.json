@@ -1,0 +1,82 @@
+{
+    "settings": {
+        "number_of_shards": 2,
+        "number_of_replicas": 1,
+        "analysis": {
+            "analyzer": {
+                "my_analyzer": {
+                    "type": "custom",
+                    "tokenizer": "my_tokenizer",
+                    "filter": [
+                        "lowercase"
+                    ]
+                }
+            },
+            "tokenizer": {
+                "my_tokenizer": {
+                    "type": "ngram",
+                    "min_gram": 3,
+                    "max_gram": 3,
+                    "token_chars": [
+                        "letter",
+                        "digit"
+                    ]
+                }
+            }
+        }
+    },
+    "mappings": {
+        "properties": {
+            "code": {
+                "type": "keyword"
+            },
+            "created_at": {
+                "type": "date",
+                "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+            },
+            "id": {
+                "type": "long"
+            },
+            "image": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "name": {
+                "type": "text",
+                "fields": {
+                    "raw": {
+                        "type": "keyword"
+                    }
+                },
+                "analyzer": "my_analyzer"
+            },
+            "principal_code": {
+                "type": "keyword"
+            },
+            "slug": {
+                "type": "keyword"
+            },
+            "sort_order": {
+                "type": "long"
+            },
+            "status": {
+                "type": "long"
+            },
+            "store_id": {
+                "type": "long"
+            },
+            "show_official": {
+                "type": "long"
+            },
+            "updated_at": {
+                "type": "date",
+                "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+            }
+        }
+    }
+}

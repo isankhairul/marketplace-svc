@@ -1,0 +1,132 @@
+{
+    "settings": {
+        "number_of_shards": 2,
+        "number_of_replicas": 1,
+        "analysis": {
+            "filter": {
+                "indonesian_stop": {
+                    "type": "stop",
+                    "stopwords": "_indonesian_"
+                },
+                "synonym_graph": {
+                    "type" : "synonym_graph",
+                    "lenient": true,
+                    "synonyms" : []
+                }
+            },
+            "analyzer": {
+                "synonym": {
+                    "tokenizer": "standard",
+                    "char_filter": [
+                        "my_char_filter"
+                    ],
+                    "filter": [
+                        "lowercase",
+                        "indonesian_stop",
+                        "synonym_graph"
+                    ]
+                }
+            },
+            "char_filter": {
+                "my_char_filter": {
+                    "type": "mapping",
+                    "mappings": [
+                        "٠ => 0",
+                        "١ => 1",
+                        "٢ => 2",
+                        "٣ => 3",
+                        "٤ => 4",
+                        "٥ => 5",
+                        "٦ => 6",
+                        "٧ => 7",
+                        "٨ => 8",
+                        "٩ => 9"
+                    ]
+                }
+            }
+        }
+    },
+    "mappings": {
+        "properties": {
+            "id": {
+                "type": "integer"
+            },
+            "rules": {
+                "type": "integer"
+            },
+            "products": {
+                "type": "integer"
+            },
+            "name": {
+                "type": "text",
+                "analyzer": "synonym",
+                "fields": {
+                    "raw": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "order_parent_no": {
+                "type": "integer"
+            },
+            "order_no": {
+                "type": "text"
+            },
+            "email": {
+                "type": "keyword"
+            },
+            "created_at": {
+                "type": "date",
+                "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+            },
+            "status": {
+                "type": "integer"
+            },
+            "status_name": {
+                "type": "text"
+            },
+            "discount_amount": {
+                "type": "double"
+            },
+            "coupon_code": {
+                "type": "text"
+            },
+            "subtotal": {
+                "type": "double"
+            },
+            "phone_number": {
+                "type": "keyword"
+            },
+            "payment_method": {
+                "type": "text"
+            },
+            "full_name": {
+                "type": "text"
+            },
+            "address": {
+                "type": "keyword"
+            },
+            "fulfillment": {
+                "type": "text"
+            },
+            "ngram_email": {
+                "type": "text",
+                "analyzer": "synonym",
+                "fields": {
+                    "raw": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "ngram_address": {
+                "type": "text",
+                "analyzer": "synonym",
+                "fields": {
+                    "raw": {
+                        "type": "keyword"
+                    }
+                }
+            }
+        }
+    }
+}

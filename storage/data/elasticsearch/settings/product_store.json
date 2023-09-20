@@ -1,0 +1,151 @@
+{
+    "settings": {
+        "number_of_shards": 2,
+        "number_of_replicas": 1,
+        "analysis": {
+            "analyzer": {
+                "search_term_analyzer": {
+                    "type": "custom",
+                    "stopwords": "_none_",
+                    "filter": ["lowercase", "asciifolding", "no_stop"],
+                    "tokenizer": "whitespace"
+                }
+            },
+            "filter": {
+                "no_stop": {
+                    "type": "stop",
+                    "stopwords": "_none_"
+                }
+            }
+        }
+    },
+    "mappings": {
+        "properties": {
+            "name": {
+                "type": "text",
+                "analyzer": "search_term_analyzer",
+                "search_analyzer": "search_term_analyzer",
+                "fields": {
+                    "raw": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "sku": {
+                "type": "keyword"
+            },
+            "slug": {
+                "type": "keyword"
+            },
+            "barcode": {
+                "type": "keyword"
+            },
+            "brand_code": {
+                "type": "keyword"
+            },
+            "type_id": {
+                "type": "keyword"
+            },
+            "weight": {
+                "type": "float"
+            },
+            "base_point": {
+                "type": "float"
+            },
+            "base_point_rupiah": {
+                "type": "long"
+            },
+            "reward_point_sell_product": {
+                "type": "long"
+            },
+            "created_at": {
+                "type": "date",
+                "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+            },
+            "updated_at": {
+                "type": "date",
+                "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+            },
+            "completion_terms": {
+                "type": "text",
+                "analyzer": "standard"
+            },
+            "full_text_search": {
+                "type": "text",
+                "analyzer": "search_term_analyzer",
+                "search_analyzer": "search_term_analyzer"
+            },
+            "breadcrumbs": {
+                "type": "nested"
+            },
+            "categories": {
+                "type": "nested",
+                "properties": {
+                    "slug": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "merchants": {
+                "type": "nested",
+                "properties": {
+                    "code": {
+                        "type": "keyword"
+                    },
+                    "uid": {
+                        "type": "keyword"
+                    },
+                    "slug": {
+                        "type": "keyword"
+                    },
+                    "type_slug": {
+                        "type": "keyword"
+                    },
+                    "merchant_sku": {
+                        "type": "keyword"
+                    },
+                    "product_sku": {
+                        "type": "keyword"
+                    },
+                    "zipcode": {
+                        "type": "keyword"
+                    },
+                    "location": {
+                        "type": "geo_point"
+                    },
+                    "rating": {
+                        "type": "float"
+                    },
+                    "sold": {
+                        "type": "long"
+                    },
+                    "selling_price": {
+                        "type": "long"
+                    },
+                    "special_prices": {
+                        "type": "nested",
+                        "properties": {
+                            "customer_group_id" : {
+                                "type" : "long"
+                            },
+                            "price": {
+                                "type": "long"
+                            },
+                            "from_time": {
+                                "type": "date",
+                                "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+                            },
+                            "to_time": {
+                                "type": "date",
+                                "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+                            }
+                        }
+                    },
+                    "hide_price": {
+                        "type": "boolean"
+                    }
+                }
+            }
+        }
+    }
+}

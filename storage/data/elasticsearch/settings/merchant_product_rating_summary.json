@@ -1,0 +1,70 @@
+{
+    "settings": {
+        "number_of_shards": 2,
+        "number_of_replicas": 1,
+        "analysis": {
+            "analyzer": {
+                "my_analyzer": {
+                    "type": "custom",
+                    "tokenizer": "my_tokenizer",
+                    "filter": [
+                        "lowercase"
+                    ]
+                }
+            },
+            "tokenizer": {
+                "my_tokenizer": {
+                    "type": "ngram",
+                    "min_gram": 3,
+                    "max_gram": 3,
+                    "token_chars": [
+                        "letter",
+                        "digit"
+                    ]
+                }
+            }
+        }
+    },
+    "mappings": {
+        "properties": {
+            "id": {
+                "type": "keyword"
+            },
+            "product_slug": {
+                "type": "text",
+                "fields": {
+                    "raw": {
+                        "type": "keyword"
+                    }
+                },
+                "fielddata": true,
+                "analyzer": "my_analyzer"
+            },
+            "merchant_slug": {
+                "type": "text",
+                "fields": {
+                    "raw": {
+                        "type": "keyword"
+                    }
+                },
+                "fielddata": true,
+                "analyzer": "my_analyzer"
+            },
+            "merchant_uid": {
+                "type": "keyword"
+            },
+            "total_ulasan": {
+                "type": "long"
+            },
+            "max_score": {
+                "type": "long"
+            },
+            "average_score": {
+                "type": "long"
+            },
+            "product_rating": {
+                "type": "nested"
+            }
+        }
+    }
+}

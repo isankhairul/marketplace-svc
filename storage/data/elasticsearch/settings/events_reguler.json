@@ -1,0 +1,124 @@
+{
+    "settings": {
+        "analysis": {
+            "analyzer": {
+                "search_term_analyzer": {
+                    "type": "custom",
+                    "stopwords": "_none_",
+                    "filter": [
+                        "lowercase",
+                        "asciifolding",
+                        "no_stop"
+                    ],
+                    "tokenizer": "standard"
+                }
+            },
+            "filter": {
+                "no_stop": {
+                    "type": "stop",
+                    "stopwords": "_none_"
+                }
+            }
+        }
+    },
+    "mappings": {
+        "properties": {
+            "title": {
+                "type": "text",
+                "analyzer": "search_term_analyzer",
+                "search_analyzer": "search_term_analyzer",
+                "fields": {
+                    "raw": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "sku": {
+                "type": "keyword"
+            },
+            "slug": {
+                "type": "keyword"
+            },
+            "completion_terms": {
+                "type": "text",
+                "analyzer": "standard"
+            },
+            "full_text_search": {
+                "type": "text",
+                "analyzer": "search_term_analyzer",
+                "search_analyzer": "search_term_analyzer"
+            },
+            "base_point": {
+                "type": "float"
+            },
+            "base_point_rupiah": {
+                "type": "long"
+            },
+            "created_at": {
+                "type": "date",
+                "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+            },
+            "updated_at": {
+                "type": "date",
+                "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+            },
+            "merchants": {
+                "type": "nested",
+                "properties": {
+                    "id": {
+                        "type": "long"
+                    },
+                    "name": {
+                        "type": "text"
+                    },
+                    "slug": {
+                        "type": "keyword"
+                    },
+                    "status": {
+                        "type": "long"
+                    },
+                    "type_id": {
+                        "type": "long"
+                    },
+                    "events_sku": {
+                        "type": "keyword"
+                    },
+                    "merchant_sku": {
+                        "type": "keyword"
+                    },
+                    "quota": {
+                        "type": "long"
+                    },
+                    "quota_reserved": {
+                        "type": "long"
+                    },
+                    "quota_on_hand": {
+                        "type": "long"
+                    },
+                    "max_purchase_qty": {
+                        "type": "long"
+                    },
+                    "coordinate": {
+                        "type": "geo_point"
+                    },
+                    "schedules": {
+                        "type": "nested",
+                        "properties": {
+                            "day_of_week": {
+                                "type": "long"
+                            },
+                            "start_time": {
+                                "type": "date",
+                                "format": "HH:mm:ss"
+                            },
+                            "end_time": {
+                                "type": "date",
+                                "format": "HH:mm:ss"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
