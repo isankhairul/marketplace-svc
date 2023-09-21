@@ -10,6 +10,7 @@ import (
 	"github.com/alitto/pond"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
+	"golang.org/x/exp/slices"
 	"log"
 	"marketplace-svc/pkg/util"
 	"os"
@@ -68,7 +69,7 @@ func (e elasticClient) BulkIndex(body []interface{}, indexName string, filename 
 					continue
 				}
 				mapHeader := map[string]interface{}{
-					"index": map[string]string{"_id": id},
+					"index": map[string]string{"_id": id, "_index": indexName},
 				}
 				arrBodyUpdated = append(arrBodyUpdated, mapHeader)
 				arrBodyUpdated = append(arrBodyUpdated, item)
@@ -79,13 +80,16 @@ func (e elasticClient) BulkIndex(body []interface{}, indexName string, filename 
 				for _, item := range arrBodyUpdated {
 					_ = enc.Encode(item)
 				}
-				_, err := esapi.BulkRequest{
+				resp, err := esapi.BulkRequest{
 					Index: indexName,
 					Body:  bytes.NewReader(ndJSON.Bytes()),
 				}.Do(context.Background(), e.GetClient())
 
 				if err != nil {
 					e.GetLogger().Error(errors.New("error BulkIndexing: " + err.Error()))
+				}
+				if !slices.Contains([]int{200, 201}, resp.StatusCode) {
+					e.GetLogger().Info("response error bulkRequest: " + fmt.Sprint(resp))
 				}
 			}
 		})

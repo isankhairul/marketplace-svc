@@ -6,7 +6,7 @@ import (
 	"github.com/alitto/pond"
 	"github.com/pkg/errors"
 	"gitlab.klik.doctor/platform/go-pkg/dapr/logger"
-	entity "marketplace-svc/app/model/entity/catalog"
+	modelelastic "marketplace-svc/app/model/elastic"
 	"marketplace-svc/app/repository"
 	"marketplace-svc/helper/elastic"
 	"math"
@@ -58,7 +58,7 @@ func (s elasticProductServiceImpl) Reindex(index string, productIDs string, stor
 	var chanBody = make(chan interface{})
 
 	// This will create a pool with 20 running worker goroutines
-	pool := pond.New(20, totalPage, pond.IdleTimeout(30*time.Second), pond.Strategy(pond.Balanced()))
+	pool := pond.New(20, totalPage, pond.IdleTimeout(30*time.Second))
 
 	for page := 1; page <= totalPage; page++ {
 		n := page
@@ -70,7 +70,7 @@ func (s elasticProductServiceImpl) Reindex(index string, productIDs string, stor
 			for _, value := range values {
 				pid := fmt.Sprint(value["product_id"]) + "-" + value["merchant_uid"].(string)
 				intVar, _ := strconv.ParseInt(fmt.Sprint(value["product_is_active"]), 0, 32)
-				currentBody := entity.EsProductFlat{
+				currentBody := modelelastic.EsProductFlat{
 					ID:              pid,
 					Name:            fmt.Sprint(value["product_name"]),
 					Sku:             fmt.Sprint(value["product_sku"]),
@@ -107,8 +107,8 @@ func (s elasticProductServiceImpl) Reindex(index string, productIDs string, stor
 	return nil
 }
 
-func (s elasticProductServiceImpl) getMerchants(item map[string]interface{}) entity.EsProductFlatMerchant {
-	var result = entity.EsProductFlatMerchant{
+func (s elasticProductServiceImpl) getMerchants(item map[string]interface{}) modelelastic.EsProductFlatMerchant {
+	var result = modelelastic.EsProductFlatMerchant{
 		ID:             item["id"].(int32),
 		UID:            item["merchant_uid"].(string),
 		Code:           item["code"].(string),
@@ -131,7 +131,7 @@ func (s elasticProductServiceImpl) getMerchants(item map[string]interface{}) ent
 		Subdistrict:    item["subdistrict"].(string),
 		PostalcodeID:   item["postalcode_id"].(int32),
 		Zipcode:        item["zipcode"].(string),
-		Location: entity.EsProductFlatLocation{
+		Location: modelelastic.EsProductFlatLocation{
 			Lat: fmt.Sprint(item["latitude"]),
 			Lon: fmt.Sprint(item["longitude"]),
 		},
@@ -145,11 +145,11 @@ func (s elasticProductServiceImpl) getMerchants(item map[string]interface{}) ent
 		SellingPrice:      item["selling_price"].(int32),
 		HidePrice:         item["hide_price"].(bool),
 	}
-	var sp []entity.EsProductFlatSpecialPrice
+	var sp []modelelastic.EsProductFlatSpecialPrice
 	var epfsp []map[string]interface{}
 	json.Unmarshal([]byte(item["special_prices"].(string)), &epfsp)
 	for _, val := range epfsp {
-		sp = append(sp, entity.EsProductFlatSpecialPrice{
+		sp = append(sp, modelelastic.EsProductFlatSpecialPrice{
 			CustomerGroupID: int32(val["customer_group_id"].(float64)),
 			Price:           int32(val["price"].(float64)),
 			FromTime:        val["from_time"].(string),

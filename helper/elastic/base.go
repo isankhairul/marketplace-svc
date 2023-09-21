@@ -6,12 +6,13 @@ import (
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"gitlab.klik.doctor/platform/go-pkg/dapr/logger"
 	"marketplace-svc/app/model/base"
+	responseelastic "marketplace-svc/app/model/response/elastic"
 	"marketplace-svc/helper/config"
 )
 
 type ElasticClient interface {
 	Search(ctx context.Context, collection string, query map[string]interface{}) (*esapi.Response, error)
-	Pagination(dataEl map[string]interface{}, page, limit int) base.Pagination
+	Pagination(rs responseelastic.SearchResponse, page int, limit int) base.Pagination
 	BulkIndex(body []interface{}, indexName string, filename string, flush bool) error
 	GetClient() *elasticsearch.Client
 }

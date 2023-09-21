@@ -2,11 +2,13 @@ package elastic
 
 import (
 	"context"
-	"marketplace-svc/app/model/base"
-	"math"
-
+	"errors"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
+	"golang.org/x/exp/slices"
+	"marketplace-svc/app/model/base"
+	responseelastic "marketplace-svc/app/model/response/elastic"
+	"math"
 )
 
 type Search interface {
@@ -25,14 +27,15 @@ func (elastic elasticClient) Search(ctx context.Context, collection string, quer
 	if err != nil {
 		return nil, err
 	}
+	if !slices.Contains([]int{200, 201}, responseEl.StatusCode) {
+		return nil, errors.New("status code not 200, with message: " + responseEl.String())
+	}
 
 	return responseEl, nil
 }
 
-func (elastic elasticClient) Pagination(dataEl map[string]interface{}, page, limit int) base.Pagination {
-	hits := dataEl["hits"].(map[string]interface{})
-	hitsTotal := hits["total"].(map[string]interface{})
-	totalRecords := hitsTotal["value"].(float64)
+func (elastic elasticClient) Pagination(rs responseelastic.SearchResponse, page int, limit int) base.Pagination {
+	totalRecords := rs.Hits.Total.Value
 	var pagination base.Pagination
 	pagination.Limit = limit
 	pagination.Page = page

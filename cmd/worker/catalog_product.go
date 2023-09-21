@@ -6,7 +6,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"marketplace-svc/app"
 	"marketplace-svc/app/model/base"
-	"marketplace-svc/app/registry"
+	elasticregistry "marketplace-svc/app/registry/elastic"
 	elasticservice "marketplace-svc/app/service/elastic"
 	"marketplace-svc/helper/queue"
 	"sync"
@@ -22,7 +22,7 @@ func NewCatalogProduct(infra app.Infra) IWorker {
 	return &CatalogProduct{
 		Infra:                 infra,
 		Topic:                 base.TOPIC_CATALOG_PRODUCT,
-		ElasticProductService: registry.RegisterElasticProductService(&infra),
+		ElasticProductService: elasticregistry.RegisterEsProductService(&infra),
 	}
 }
 
@@ -38,9 +38,10 @@ func (cp CatalogProduct) Cmd() *cli.Command {
 			// Defining time value
 			// of Since method
 			//now := time.Now()
-			//err := cp.ElasticProductService.Reindex("golang_product_store", "", 1, "", 620, true)
-			//fmt.Println(err)
+			//_ = cp.ElasticProductService.Reindex("golang_product_store", "", 1, "", 620, false)
 			//fmt.Println("time elapse: ", time.Since(now))
+			//
+			//return nil
 
 			return cp.Subscriber(c.Int("indices"))
 		},

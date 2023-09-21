@@ -24,7 +24,7 @@ func NewBaseCommand(infra app.Infra) *BaseCommand {
 
 	baseCommand.Cmd.CommandNotFound = func(c *cli.Context, command string) {
 		infra.Log.Info("No matching command " + command)
-		cli.ShowAppHelp(c)
+		//_ = cli.ShowAppHelp(c)
 	}
 
 	return baseCommand

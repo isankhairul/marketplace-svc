@@ -15,6 +15,7 @@ var (
 	FailedMsg        = Message{Code: 400, Message: "Failed"}
 	ErrNoAuth        = Message{Code: 401, Message: "No Authorization"}
 	ErrDB            = Message{Code: 500, Message: "Error has been occurred while processing database request"}
+	ErrES            = Message{Code: 500, Message: "Error has been occurred while processing elasticsearch request"}
 )
 
 // Specific message
