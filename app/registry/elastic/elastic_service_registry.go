@@ -20,6 +20,7 @@ func RegisterEsProductService(app *app.Infra) elasticservice.ElasticProductServi
 func RegisterEsBannerService(app *app.Infra) elasticservice.ElasticBannerService {
 	ec, _ := elastic.NewElasticClient(&app.Config.Elastic, app.Log)
 	return elasticservice.NewElasticBannerService(
+		*app.Config,
 		app.Log,
 		rp.NewBaseRepository(app.DB),
 		ec,

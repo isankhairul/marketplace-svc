@@ -30,7 +30,7 @@ func (e elasticClient) GetLogger() logger.Logger {
 	return e.Log
 }
 
-func NewElasticClient(cfg *config.Elastic, log logger.Logger) (ElasticClient, error) {
+func NewElasticClient(cfg *config.ElasticConfig, log logger.Logger) (ElasticClient, error) {
 	elasticCfg := elasticsearch.Config{
 		Addresses: []string{cfg.Host},
 		Username:  cfg.Username,

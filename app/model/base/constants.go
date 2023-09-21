@@ -1,7 +1,9 @@
 package base
 
 const (
-	MAX_LIMIT_PAGINATION = 100
+	// PAGINATION
+	PAGINATION_MAX_LIMIT = 100
+	PAGINATION_MIN_LIMIT = 10
 
 	// QUEUE
 	TOPIC_ORDER_CREATE_NOTIFIY = "order-create-notify"
