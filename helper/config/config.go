@@ -14,8 +14,7 @@ type Config struct {
 	Kafka        KafkaConfig        `mapstructure:"kafka"`
 	KalcareAPI   KalcareAPI         `mapstructure:"kalcare-api"`
 	MicroService MicroServiceConfig `mapstructure:"micro-service"`
-	User         User               `mapstructure:"user"`
-	Elastic      Elastic            `mapstructure:"elastic"`
+	Elastic      ElasticConfig      `mapstructure:"elastic"`
 }
 
 type DBConfig struct {
@@ -42,11 +41,12 @@ type CacheDBConfig struct {
 	DefaultExpiry int    `mapstructure:"default-expiry"`
 }
 
-type Elastic struct {
-	Host     string `mapstructure:"host"`
-	Port     string `mapstructure:"port"`
-	Username string `mapstructure:"username"`
-	Password string `mapstructure:"password"`
+type ElasticConfig struct {
+	Host     string                 `mapstructure:"host"`
+	Port     string                 `mapstructure:"port"`
+	Username string                 `mapstructure:"username"`
+	Password string                 `mapstructure:"password"`
+	Index    map[string]interface{} `mapstructure:"index"`
 }
 
 type KalcareAPI struct {
@@ -68,8 +68,9 @@ type DBLogConfig struct {
 }
 
 type URLConfig struct {
-	BaseURL    string `mapstructure:"baseurl"`
-	BasePrefix string `mapstructure:"baseprefix"`
+	BaseURL      string `mapstructure:"baseurl"`
+	BasePrefix   string `mapstructure:"baseprefix"`
+	BaseImageURL string `mapstructure:"base-image-url"`
 }
 
 type ServerConfig struct {

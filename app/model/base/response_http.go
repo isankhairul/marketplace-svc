@@ -20,7 +20,7 @@ type responseHttp struct {
 	// in: struct{}
 	Data data `json:"data"`
 	// Errors is the response message
-	// in: string
+	// in: interface
 	Errors interface{} `json:"errors,omitempty"`
 }
 

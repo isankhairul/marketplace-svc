@@ -51,10 +51,10 @@ func decodeRequestESBanner(ctx context.Context, r *http.Request) (rqst interface
 
 	// Default and max LIMIT
 	if req.Limit == 0 {
-		req.Limit = 10
+		req.Limit = base.PAGINATION_MIN_LIMIT
 	}
-	if req.Limit > base.MAX_LIMIT_PAGINATION {
-		req.Limit = base.MAX_LIMIT_PAGINATION
+	if req.Limit > base.PAGINATION_MAX_LIMIT {
+		req.Limit = base.PAGINATION_MAX_LIMIT
 	}
 
 	// Default page 1
