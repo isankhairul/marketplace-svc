@@ -1,0 +1,145 @@
+{
+    "settings": {
+        "index.max_ngram_diff": 7,
+        "number_of_shards": 2,
+        "number_of_replicas": 1,
+        "analysis": {
+            "normalizer": {
+                "case_insensitive": {
+                    "filter": "lowercase"
+                }
+            },
+            "filter": {
+                "autocomplete_filter": {
+                    "type": "edge_ngram",
+                    "min_gram": 3,
+                    "max_gram": 10
+                }
+            },
+            "analyzer": {
+                "autocomplete": {
+                    "type": "custom",
+                    "tokenizer": "standard",
+                    "filter": [
+                        "lowercase",
+                        "autocomplete_filter"
+                    ]
+                },
+                "ngram_analyzer": {
+                    "tokenizer": "ngram_tokenizer",
+                    "filter": "lowercase"
+                }
+            },
+            "tokenizer": {
+                "ngram_tokenizer": {
+                    "type": "ngram",
+                    "min_gram": 3,
+                    "max_gram": 10,
+                    "token_chars": [
+                        "letter",
+                        "digit"
+                    ]
+                }
+            }
+        }
+    },
+    "mappings": {
+        "properties": {
+            "nama_propinsi": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    },
+                    "ngram": {
+                        "type": "text",
+                        "analyzer": "ngram_analyzer"
+                    },
+                    "autocomplete": {
+                        "type": "text",
+                        "analyzer": "standard"
+                    }
+                }
+            },
+            "nama_kab_kota": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    },
+                    "ngram": {
+                        "type": "text",
+                        "analyzer": "ngram_analyzer"
+                    },
+                    "autocomplete": {
+                        "type": "text",
+                        "analyzer": "standard"
+                    }
+
+                }
+            },
+            "nama_kecamatan": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    },
+                    "ngram": {
+                        "type": "text",
+                        "analyzer": "ngram_analyzer"
+                    },
+                    "autocomplete": {
+                        "type": "text",
+                        "analyzer": "standard"
+                    }
+                }
+            },
+            "namaKelurahan": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    },
+                    "ngram": {
+                        "type": "text",
+                        "analyzer": "ngram_analyzer"
+                    },
+                    "autocomplete": {
+                        "type": "text",
+                        "analyzer": "standard"
+                    }
+                }
+            },
+            "propinsi_id": {
+                "type": "keyword"
+            },
+            "kab_kota_id": {
+                "type": "keyword"
+            },
+            "kecamatan_id": {
+                "type": "keyword"
+            },
+            "kode_pos_id": {
+                "type": "keyword"
+            },
+            "negara_id": {
+                "type": "keyword"
+            },
+            "nama_negara": {
+                "type": "keyword"
+            },
+            "created_at": {
+                "type": "date",
+                "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+            },
+            "updated_at": {
+                "type": "date",
+                "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+            }
+        }
+    }
+}

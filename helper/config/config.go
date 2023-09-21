@@ -6,16 +6,16 @@ import (
 )
 
 type Config struct {
-	URL           URLConfig          `mapstructure:"url"`
-	Server        ServerConfig       `mapstructure:"server"`
-	Security      SecurityConfig     `mapstructure:"security"`
-	DB            DBConfig           `mapstructure:"database"`
-	RedisDB       CacheDBConfig      `mapstructure:"redis-database"`
-	Kafka         KafkaConfig        `mapstructure:"kafka"`
-	KalcareAPI    KalcareAPI         `mapstructure:"kalcare-api"`
-	MicroService  MicroServiceConfig `mapstructure:"micro-service"`
-	User          User               `mapstructure:"user"`
-	ElasticSearch ElasticSearch      `mapstructure:"elasticsearch"`
+	URL          URLConfig          `mapstructure:"url"`
+	Server       ServerConfig       `mapstructure:"server"`
+	Security     SecurityConfig     `mapstructure:"security"`
+	DB           DBConfig           `mapstructure:"database"`
+	RedisDB      CacheDBConfig      `mapstructure:"redis-database"`
+	Kafka        KafkaConfig        `mapstructure:"kafka"`
+	KalcareAPI   KalcareAPI         `mapstructure:"kalcare-api"`
+	MicroService MicroServiceConfig `mapstructure:"micro-service"`
+	User         User               `mapstructure:"user"`
+	Elastic      Elastic            `mapstructure:"elastic"`
 }
 
 type DBConfig struct {
@@ -42,9 +42,9 @@ type CacheDBConfig struct {
 	DefaultExpiry int    `mapstructure:"default-expiry"`
 }
 
-type ElasticSearch struct {
-	IsUse    bool   `mapstructure:"is-use"`
+type Elastic struct {
 	Host     string `mapstructure:"host"`
+	Port     string `mapstructure:"port"`
 	Username string `mapstructure:"username"`
 	Password string `mapstructure:"password"`
 }

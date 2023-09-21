@@ -41,7 +41,7 @@ func main() {
 		Config: cfg,
 	}
 	// enable configuration
-	infra.EnableLog().EnableDB().EnableKafkaProducer().EnableElasticClient()
+	infra.WithLog().WithDB().WithKafkaProducer().WithElasticClient()
 
 	log := infra.Log
 

@@ -1,0 +1,281 @@
+{
+    "settings": {
+        "number_of_shards": 2,
+        "number_of_replicas": 1,
+        "analysis": {
+            "char_filter": {
+                "my_char_filter": {
+                    "type": "mapping",
+                    "mappings": [
+                        "٠ => 0",
+                        "١ => 1",
+                        "٢ => 2",
+                        "٣ => 3",
+                        "٤ => 4",
+                        "٥ => 5",
+                        "٦ => 6",
+                        "٧ => 7",
+                        "٨ => 8",
+                        "٩ => 9"
+                    ]
+                }
+            }
+        }
+    },
+    "mappings": {
+        "properties": {
+            "images": {
+                "properties": {
+                    "default": {
+                        "type": "text"
+                    },
+                    "original": {
+                        "type": "text"
+                    },
+                    "thumbnail": {
+                        "type": "text"
+                    }
+                }
+            },
+            "usage": {
+                "type": "nested",
+                "properties": {
+                    "customer_id": {
+                        "type": "integer"
+                    },
+                    "times_used": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "id": {
+                "type": "long"
+            },
+            "brand_codes": {
+                "type": "keyword"
+            },
+            "name": {
+                "type": "keyword"
+            },
+            "slug": {
+                "type": "keyword"
+            },
+            "payment_method_ids": {
+                "type": "keyword"
+            },
+
+            "description": {
+                "type": "text"
+            },
+            "from_date": {
+                "type": "date",
+                "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+            },
+            "to_date": {
+                "type": "date",
+                "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+            },
+            "uses_per_customer": {
+                "type": "integer"
+            },
+            "status": {
+                "type": "integer"
+            },
+            "conditions_serialized": {
+                "type": "text"
+            },
+            "actions_serialized": {
+                "type": "text"
+            },
+            "stop_rules_processing": {
+                "type": "integer"
+            },
+            "advanced": {
+                "type": "integer"
+            },
+            "sort_order": {
+                "type": "integer"
+            },
+            "simple_action": {
+                "type": "text"
+            },
+            "discount_amount": {
+                "type": "double"
+            },
+            "discount_step": {
+                "type": "integer"
+            },
+            "times_used": {
+                "type": "integer"
+            },
+            "rss": {
+                "type": "integer"
+            },
+            "coupon_type": {
+                "type": "integer"
+            },
+            "use_auto_generation": {
+                "type": "integer"
+            },
+            "uses_per_coupon": {
+                "type": "integer"
+            },
+            "stores": {
+                "type": "nested",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "text"
+                    }
+                }
+            },
+            "customer_groups": {
+                "type": "nested",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "code": {
+                        "type": "text"
+                    }
+                }
+            },
+            "merchant_types": {
+                "type": "nested",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "text"
+                    }
+                }
+            },
+            "principal_data": {
+                "type": "text"
+            },
+            "conditions_sql": {
+                "type": "text"
+            },
+            "simple_free_shipping": {
+                "type": "integer"
+            },
+            "apply_to_shipping": {
+                "type": "integer"
+            },
+            "shipping_discount_amount": {
+                "type": "double"
+            },
+            "promotion_scpr_type_id": {
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "title": {
+                        "type": "text"
+                    }
+                }
+            },
+            "promotion_message": {
+                "type": "text"
+            },
+            "fds_ids": {
+                "type": "nested",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "rule_name": {
+                        "type": "text"
+                    }
+                }
+            },
+            "usage_per_device": {
+                "type": "integer"
+            },
+            "scope": {
+                "type": "text"
+            },
+            "from_time": {
+                "type": "long"
+            },
+            "to_time": {
+                "type": "long"
+            },
+            "discount_max": {
+                "type": "double"
+            },
+            "product_add_type": {
+                "type": "text"
+            },
+            "actions_filters": {
+                "type": "text"
+            },
+            "fds_rule": {
+                "type": "text"
+            },
+            "message_failure": {
+                "type": "text"
+            },
+            "conditions_elastic": {
+                "type": "text"
+            },
+            "action_type": {
+                "type": "text"
+            },
+            "conditions_sql_advance": {
+                "type": "text"
+            },
+            "reset_interval": {
+                "type": "integer"
+            },
+            "merchant_ids": {
+                "type": "nested"
+            },
+            "claimed": {
+                "type": "keyword"
+            },
+            "promo_ids": {
+                "type": "nested",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "text"
+                    }
+                }
+            },
+            "action_rule": {
+                "type": "integer"
+            },
+            "apply_to_claim": {
+                "type": "integer"
+            },
+            "additional_information": {
+                "type": "text"
+            },
+            "category": {
+                "properties": {
+                    "payment": {
+                        "type": "boolean"
+                    },
+                    "principal": {
+                        "type": "boolean"
+                    },
+                    "merchant": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "coupon_code": {
+                "type": "text"
+            },
+            "category_slug": {
+                "type": "text"
+            }
+        }
+    }
+}

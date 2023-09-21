@@ -13,6 +13,7 @@ type IWorker interface {
 }
 
 func GetWorkerHandlerCommand(infra app.Infra) *cli.Command {
+	// list subcommands worker
 	arrSubCmd := []*cli.Command{
 		//NewCatalogProduct(infra).Cmd(),
 		//NewCatalogProductBig(infra).Cmd(),

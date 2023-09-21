@@ -1,0 +1,471 @@
+{
+    "settings": {
+        "number_of_shards": 2,
+        "number_of_replicas": 1,
+        "analysis": {
+            "filter": {
+                "indonesian_stop": {
+                    "type": "stop",
+                    "stopwords": "_indonesian_"
+                },
+                "synonym_graph": {
+                    "type": "synonym_graph",
+                    "lenient": true,
+                    "synonyms": []
+                }
+            },
+            "analyzer": {
+                "synonym": {
+                    "tokenizer": "standard",
+                    "char_filter": [
+                        "my_char_filter"
+                    ],
+                    "filter": [
+                        "lowercase",
+                        "asciifolding",
+                        "indonesian_stop",
+                        "synonym_graph"
+                    ]
+                }
+            },
+            "char_filter": {
+                "my_char_filter": {
+                    "type": "mapping",
+                    "mappings": [
+                        "٠ => 0",
+                        "١ => 1",
+                        "٢ => 2",
+                        "٣ => 3",
+                        "٤ => 4",
+                        "٥ => 5",
+                        "٦ => 6",
+                        "٧ => 7",
+                        "٨ => 8",
+                        "٩ => 9"
+                    ]
+                }
+            }
+        }
+    },
+    "mappings": {
+        "properties": {
+            "customer": {
+                "properties": {
+                    "contact_id": {
+                        "type": "keyword"
+                    },
+                    "id": {
+                        "type": "long"
+                    },
+                    "name": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    }
+                }
+            },
+            "grand_total": {
+                "type": "integer"
+            },
+            "id": {
+                "type": "long"
+            },
+            "rules": {
+                "type": "integer"
+            },
+            "coupon_code": {
+                "type": "keyword"
+            },
+            "store_id": {
+                "type": "integer",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "email": {
+                "type": "keyword"
+            },
+            "phone_number": {
+                "type": "keyword"
+            },
+            "address": {
+                "type": "text",
+                "analyzer": "synonym",
+                "fields": {
+                    "raw": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "street": {
+                "type": "text",
+                "analyzer": "synonym",
+                "fields": {
+                    "raw": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "merchant": {
+                "properties": {
+                    "city": {
+                        "type": "keyword"
+                    },
+                    "id": {
+                        "type": "long"
+                    },
+                    "name": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "province": {
+                        "type": "keyword"
+                    },
+                    "slug": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "order_address": {
+                "properties": {
+                    "address": {
+                        "type": "keyword"
+                    },
+                    "street": {
+                        "type": "keyword",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "subdistrict_id": {
+                        "type": "integer",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "subdistrict_name": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "district_id": {
+                        "type": "integer",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "district_name": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "city_id": {
+                        "type": "integer",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "city_name": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "province_id": {
+                        "type": "integer",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "province_name": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "postalcode_id": {
+                        "type": "integer",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "zip_code": {
+                        "type": "keyword",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "phone_number": {
+                        "type": "keyword",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "receiver_name": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "title": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "tracking_number": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "shipping_method": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "shipping_duration": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "delivery_date": {
+                        "type": "date"
+                    }
+                }
+            },
+            "order_date": {
+                "type": "date",
+                "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+            },
+            "order_items": {
+                "type": "nested",
+                "properties": {
+                    "point_earned": {
+                        "type": "integer"
+                    },
+                    "point_spent": {
+                        "type": "integer"
+                    },
+                    "price": {
+                        "type": "integer"
+                    },
+                    "product_image": {
+                        "type": "text"
+                    },
+                    "product_name": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "merchant_sku": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "quantity": {
+                        "type": "integer"
+                    },
+                    "redeem": {
+                        "type": "boolean"
+                    },
+                    "event": {
+                        "type": "boolean"
+                    },
+                    "free_product": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "order_no": {
+                "type": "double"
+            },
+            "order_parent_no": {
+                "type": "long"
+            },
+            "payment_info": {
+                "properties": {
+                    "payment_date": {
+                        "type": "date",
+                        "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+                    },
+                    "payment_method": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "payment_status": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "data_source": {
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "shipping_amount": {
+                "type": "float"
+            },
+            "status_id": {
+                "type": "integer",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "status_label": {
+                "type": "keyword"
+            },
+            "store": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "total_point_earned": {
+                "type": "double"
+            },
+            "total_point_spent": {
+                "type": "double"
+            },
+            "total_price": {
+                "type": "double"
+            },
+            "discount_percentage": {
+                "type": "double"
+            },
+            "total_quantity": {
+                "type": "float"
+            },
+            "shipping_discount_amount": {
+                "type": "double"
+            },
+            "total_point_bonus": {
+                "type": "double"
+            },
+            "total_point_discount": {
+                "type": "double"
+            },
+            "redeem": {
+                "type": "boolean"
+            },
+            "event": {
+                "type": "boolean"
+            },
+            "app_id": {
+                "type": "text"
+            },
+            "marketplace_store_id": {
+                "type": "integer"
+            },
+            "device_id": {
+                "type": "integer"
+            },
+            "agent_id": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "total_weight": {
+                "type": "float"
+            },
+            "push_citrix": {
+                "type": "boolean"
+            }
+        }
+    }
+}

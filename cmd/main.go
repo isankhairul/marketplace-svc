@@ -16,14 +16,14 @@ func main() {
 		Config: cfg,
 	}
 	// enable configuration
-	infra.EnableLog().EnableDB().EnableKafkaProducer()
+	infra.WithLog().WithDB().WithKafkaProducer().WithElasticClient()
 
 	// init cmd
-	app := cmdbase.NewBaseCommand(*infra).PopulateCommand()
+	baseCli := cmdbase.NewBaseCommand(*infra).PopulateCommand()
 
-	sort.Sort(cli.CommandsByName(app.Cmd.Commands))
-	sort.Sort(cli.FlagsByName(app.Cmd.Flags))
-	err := app.Cmd.Run(os.Args)
+	sort.Sort(cli.CommandsByName(baseCli.Cmd.Commands))
+	sort.Sort(cli.FlagsByName(baseCli.Cmd.Flags))
+	err := baseCli.Cmd.Run(os.Args)
 	if err != nil {
 		infra.Log.Error(err)
 	}

@@ -1,0 +1,128 @@
+{
+    "settings": {
+        "number_of_shards": 2,
+        "number_of_replicas": 1,
+        "analysis": {
+            "analyzer": {
+                "my_analyzer": {
+                    "type": "custom",
+                    "tokenizer": "my_tokenizer",
+                    "filter": [
+                        "lowercase"
+                    ]
+                }
+            },
+            "tokenizer": {
+                "my_tokenizer": {
+                    "type": "ngram",
+                    "min_gram": 3,
+                    "max_gram": 3,
+                    "token_chars": [
+                        "letter",
+                        "digit"
+                    ]
+                }
+            }
+        }
+    },
+    "mappings": {
+        "properties": {
+            "id": {
+                "type": "long"
+            },
+            "sku": {
+                "type": "keyword"
+            },
+            "product_id": {
+                "type": "long"
+            },
+            "name": {
+                "type": "text",
+                "fields": {
+                    "raw": {
+                        "type": "keyword"
+                    }
+                },
+                "analyzer": "my_analyzer"
+            },
+            "slug": {
+                "type": "keyword"
+            },
+            "product_status": {
+                "type": "long"
+            },
+            "image": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "merchant_id": {
+                "type": "long"
+            },
+            "merchant_sku": {
+                "type": "keyword"
+            },
+            "merchant_name": {
+                "type": "text",
+                "fields": {
+                    "raw": {
+                        "type": "keyword"
+                    }
+                },
+                "analyzer": "my_analyzer"
+            },
+            "merchant_slug": {
+                "type": "keyword"
+            },
+            "merchant_status": {
+                "type": "long"
+            },
+            "selling_price": {
+                "type": "long"
+            },
+            "special_price": {
+                "type": "long"
+            },
+            "merchant_city": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "stock": {
+                "type": "long"
+            },
+            "merchant_product_status": {
+                "type": "long"
+            },
+            "customer_id": {
+                "type": "long"
+            },
+            "created_at": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            },
+            "updated_at": {
+                "type": "text",
+                "fields": {
+                    "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                    }
+                }
+            }
+        }
+    }
+}
