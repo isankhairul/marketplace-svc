@@ -14,43 +14,50 @@ import (
 	"marketplace-svc/helper/elastic"
 	"marketplace-svc/helper/message"
 	"marketplace-svc/pkg/util"
+	"strings"
 )
 
-type ElasticBannerService interface {
-	Search(ctx context.Context, input requestelastic.BannerRequest) ([]map[string]interface{}, base.Pagination, message.Message, error)
+type ElasticBrandService interface {
+	Search(ctx context.Context, input requestelastic.BrandRequest) ([]map[string]interface{}, base.Pagination, message.Message, error)
 }
 
-type elasticBannerServiceImpl struct {
+type elasticBrandServiceImpl struct {
 	config        config.Config
 	logger        logger.Logger
 	baseRepo      repository.BaseRepository
 	elasticClient elastic.ElasticClient
 }
 
-func NewElasticBannerService(
+func NewElasticBrandService(
 	config config.Config,
 	lg logger.Logger,
 	br repository.BaseRepository,
 	esc elastic.ElasticClient,
-) ElasticBannerService {
-	return &elasticBannerServiceImpl{config, lg, br, esc}
+) ElasticBrandService {
+	return &elasticBrandServiceImpl{config, lg, br, esc}
 }
 
-func (s elasticBannerServiceImpl) Search(_ context.Context, input requestelastic.BannerRequest) ([]map[string]interface{}, base.Pagination, message.Message, error) {
-	var bannerResponse []map[string]interface{}
+func (s elasticBrandServiceImpl) Search(_ context.Context, input requestelastic.BrandRequest) ([]map[string]interface{}, base.Pagination, message.Message, error) {
+	var brandResponse []map[string]interface{}
 	var pagination base.Pagination
 	msg := message.SuccessMsg
-
-	indexName, err := s.getIndexName()
-	if err != nil {
-		return bannerResponse, pagination, message.ErrNoIndexName, err
+	// set default storeID
+	if input.StoreID == 0 {
+		input.StoreID = 1
 	}
 
 	params := s.buildQuerySearch(input)
+
+	indexName, err := s.getIndexName()
+	if err != nil {
+		return brandResponse, pagination, message.ErrNoIndexName, err
+	}
+	indexName = indexName + "_" + fmt.Sprint(input.StoreID)
+
 	resp, err := s.elasticClient.Search(context.Background(), indexName, params)
 	if err != nil {
 		s.logger.Error(errors.New("error request elastic: " + err.Error()))
-		return bannerResponse, pagination, message.ErrES, err
+		return brandResponse, pagination, message.ErrES, err
 	}
 
 	// requested fields
@@ -62,22 +69,13 @@ func (s elasticBannerServiceImpl) Search(_ context.Context, input requestelastic
 
 	var responseElastic responseelastic.SearchResponse
 	_ = json.NewDecoder(resp.Body).Decode(&responseElastic)
-	bannerResponse = s.transformSearch(responseElastic, arrFields)
+	brandResponse = s.transformSearch(responseElastic, arrFields)
 	pagination = s.elasticClient.Pagination(responseElastic, input.Page, input.Limit)
 
-	return bannerResponse, pagination, msg, nil
+	return brandResponse, pagination, msg, nil
 }
 
-func (s elasticBannerServiceImpl) defaultFields() []string {
-	return []string{
-		"id",
-		"title",
-		"slug",
-		"image",
-	}
-}
-
-func (s elasticBannerServiceImpl) buildQuerySearch(input requestelastic.BannerRequest) map[string]interface{} {
+func (s elasticBrandServiceImpl) buildQuerySearch(input requestelastic.BrandRequest) map[string]interface{} {
 	queryArray := map[string]interface{}{}
 
 	// create query bool
@@ -85,8 +83,8 @@ func (s elasticBannerServiceImpl) buildQuerySearch(input requestelastic.BannerRe
 		queryArray["bool"] = map[string]interface{}{
 			"must": map[string]interface{}{
 				"multi_match": map[string]interface{}{
-					"query":  input.Query,
-					"fields": []string{"title"},
+					"query":  strings.Trim(input.Query, ""),
+					"fields": []string{"name", "code", "principal_code"},
 				},
 			},
 		}
@@ -108,14 +106,31 @@ func (s elasticBannerServiceImpl) buildQuerySearch(input requestelastic.BannerRe
 	}
 
 	// filter
-	if input.CategorySlug != "" {
-		filterCategorySlug := map[string]interface{}{
-			"term": map[string]interface{}{
-				"category_slug": input.CategorySlug,
-			},
-		}
-		filters = append(filters, filterCategorySlug)
+	if input.PrefixName != "" {
+		filters = append(filters,
+			map[string]interface{}{
+				"prefix": map[string]interface{}{
+					"code": strings.ToLower(input.PrefixName),
+				},
+			})
 	}
+	if input.ShowOfficial != nil {
+		filters = append(filters,
+			map[string]interface{}{
+				"term": map[string]interface{}{
+					"show_official": *input.ShowOfficial,
+				},
+			})
+	}
+	if input.PrincipalCode != "" {
+		filters = append(filters,
+			map[string]interface{}{
+				"term": map[string]interface{}{
+					"principal_code": util.StringExplode(input.PrincipalCode, ","),
+				},
+			})
+	}
+	// end filter
 
 	queryArray["bool"].(map[string]interface{})["filter"] = filters
 	querySort := map[string]string{"created_at": "desc"}
@@ -133,16 +148,26 @@ func (s elasticBannerServiceImpl) buildQuerySearch(input requestelastic.BannerRe
 	return params
 }
 
-func (s elasticBannerServiceImpl) getIndexName() (string, error) {
-	indexName := s.config.Elastic.Index["index-banners"]
+func (s elasticBrandServiceImpl) defaultFields() []string {
+	return []string{
+		"id",
+		"code",
+		"name",
+		"slug",
+		"image",
+	}
+}
+
+func (s elasticBrandServiceImpl) getIndexName() (string, error) {
+	indexName := s.config.Elastic.Index["index-brands"]
 	if indexName == nil {
-		return "", errors.New("config index-banners not defined")
+		return "", errors.New("config index-brands not defined")
 	}
 
 	return fmt.Sprint(indexName), nil
 }
 
-func (s elasticBannerServiceImpl) transformSearch(rs responseelastic.SearchResponse, fields []string) []map[string]interface{} {
+func (s elasticBrandServiceImpl) transformSearch(rs responseelastic.SearchResponse, fields []string) []map[string]interface{} {
 	var response []map[string]interface{}
 
 	for _, item := range rs.Hits.Hits {

@@ -3,29 +3,26 @@ package endpointelastic
 import (
 	"context"
 	"github.com/go-kit/kit/endpoint"
-	"golang.org/x/sync/singleflight"
 	"marketplace-svc/app/model/base"
 	requestelastic "marketplace-svc/app/model/request/elastic"
 	elasticservice "marketplace-svc/app/service/elastic"
 	"marketplace-svc/helper/message"
 )
 
-var requestEsGroup singleflight.Group
-
-type EsBannerEndpoint struct {
+type EsCategoryEndpoint struct {
 	Search endpoint.Endpoint
 }
 
-func MakeEsBannerEndpoints(s elasticservice.ElasticBannerService) EsBannerEndpoint {
-	return EsBannerEndpoint{
-		Search: makeSearchBanner(s),
+func MakeEsCategoryEndpoints(s elasticservice.ElasticCategoryService) EsCategoryEndpoint {
+	return EsCategoryEndpoint{
+		Search: makeSearchCategory(s),
 	}
 }
 
-func makeSearchBanner(s elasticservice.ElasticBannerService) endpoint.Endpoint {
+func makeSearchCategory(s elasticservice.ElasticCategoryService) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (resp interface{}, err error) {
-		request := req.(requestelastic.BannerRequest)
-		v, _, _ := requestEsGroup.Do("SearchBanner_"+request.ToString(), func() (interface{}, error) {
+		request := req.(requestelastic.CategoryRequest)
+		v, _, _ := requestEsGroup.Do("SearchCategory_"+request.ToString(), func() (interface{}, error) {
 			result, page, msg, err := s.Search(ctx, request)
 			response := map[string]interface{}{
 				"result": result,
@@ -38,7 +35,7 @@ func makeSearchBanner(s elasticservice.ElasticBannerService) endpoint.Endpoint {
 		response := v.(map[string]interface{})
 		msg := response["msg"].(message.Message)
 
-		//result, page, msg, err := s.Search(ctx, request)
+		//result, page, msg, err := s.Search(ctx, req.(requestelastic.CategoryRequest))
 		if msg != message.SuccessMsg {
 			return base.SetErrorResponse(ctx, msg, err), nil
 		}

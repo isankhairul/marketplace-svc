@@ -89,12 +89,10 @@ func (cp OrderCreateNotify) HandlerSubscriber(msg *kafka.Message) {
 		fmt.Printf("Error decoding JSON to Struct: %s", err)
 	}
 
-	taskCancelMinutes := orderCancel.PaymentExpiredMinutes
+	//taskCancelMinutes := orderCancel.PaymentExpiredMinutes
 
 	if orderCancel.QueueType == "notify" {
 		go cp.initPushData(cp.Infra.Config.KalcareAPI.PostInterval, 1, []byte(orderCancelKafka.Body), []byte(orderCancel.NotifyPayload))
-	} else {
-		go cp.initCancelOrderKafka(msg.Value, taskCancelMinutes)
 	}
 }
 

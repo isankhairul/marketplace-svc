@@ -20,12 +20,16 @@ func InitRouting(app *app.Infra) *http.ServeMux {
 
 	// Elastic Service registry
 	esBannerSvc := elasticregistry.RegisterEsBannerService(app)
+	esBrandSvc := elasticregistry.RegisterEsBrandService(app)
+	esCategorySvc := elasticregistry.RegisterEsCategoryService(app)
 
 	//  Transport initialization
 	swagHttp := transport.SwaggerHttpHandler(app.Config.URL) //don't delete or change this !!
 
 	// Elastic Transport initialization
 	esBannerHttp := transportelastic.EsBannerHttpHandler(esBannerSvc, app)
+	esBrandHttp := transportelastic.EsBrandHttpHandler(esBrandSvc, app)
+	esCategoryHttp := transportelastic.EsCategoryHttpHandler(esCategorySvc, app)
 
 	// Routing path
 	mux := http.NewServeMux()
@@ -35,7 +39,9 @@ func InitRouting(app *app.Infra) *http.ServeMux {
 		_, _ = w.Write([]byte(http.StatusText(http.StatusOK)))
 	})
 
-	mux.Handle(app.URLWithPrefix(_struct.PrefixESBanner), middleware.Adapt(esBannerHttp, loggingMiddleware))
+	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/banner"), middleware.Adapt(esBannerHttp, loggingMiddleware))
+	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/brand"), middleware.Adapt(esBrandHttp, loggingMiddleware))
+	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/category"), middleware.Adapt(esCategoryHttp, loggingMiddleware))
 
 	return mux
 }

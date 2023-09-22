@@ -17,19 +17,19 @@ import (
 	"net/http"
 )
 
-func EsBannerHttpHandler(s elasticservice.ElasticBannerService, app *app.Infra) http.Handler {
+func EsCategoryHttpHandler(s elasticservice.ElasticCategoryService, app *app.Infra) http.Handler {
 	pr := mux.NewRouter()
 
-	ep := endpointelastic.MakeEsBannerEndpoints(s)
+	ep := endpointelastic.MakeEsCategoryEndpoints(s)
 	options := []httpTransport.ServerOption{
 		httpTransport.ServerErrorHandler(app.Log),
 		httpTransport.ServerErrorEncoder(encoder.EncodeError),
 		httpTransport.ServerBefore(jwt.HTTPToContext(), logger.TraceIdentifier()),
 	}
 
-	pr.Methods(http.MethodGet).Path(app.URLWithPrefix(_struct.PrefixES + "/banner")).Handler(httpTransport.NewServer(
+	pr.Methods(http.MethodGet).Path(app.URLWithPrefix(_struct.PrefixES + "/category")).Handler(httpTransport.NewServer(
 		ep.Search,
-		decodeRequestESBanner,
+		decodeRequestESCategory,
 		encoder.EncodeResponseHTTP,
 		options...,
 	))
@@ -37,8 +37,8 @@ func EsBannerHttpHandler(s elasticservice.ElasticBannerService, app *app.Infra) 
 	return pr
 }
 
-func decodeRequestESBanner(ctx context.Context, r *http.Request) (rqst interface{}, err error) {
-	var req requestelastic.BannerRequest
+func decodeRequestESCategory(ctx context.Context, r *http.Request) (rqst interface{}, err error) {
+	var req requestelastic.CategoryRequest
 	if err := r.ParseForm(); err != nil {
 		return nil, err
 	}
@@ -60,6 +60,11 @@ func decodeRequestESBanner(ctx context.Context, r *http.Request) (rqst interface
 	// Default page 1
 	if req.Page == 0 {
 		req.Page = 1
+	}
+
+	// default storeID
+	if req.StoreID == 0 {
+		req.StoreID = 1
 	}
 
 	return req, nil
