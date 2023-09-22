@@ -89,10 +89,12 @@ func (cp OrderCreateNotify) HandlerSubscriber(msg *kafka.Message) {
 		fmt.Printf("Error decoding JSON to Struct: %s", err)
 	}
 
-	//taskCancelMinutes := orderCancel.PaymentExpiredMinutes
+	taskCancelMinutes := orderCancel.PaymentExpiredMinutes
 
 	if orderCancel.QueueType == "notify" {
 		go cp.initPushData(cp.Infra.Config.KalcareAPI.PostInterval, 1, []byte(orderCancelKafka.Body), []byte(orderCancel.NotifyPayload))
+	} else {
+		go cp.initCancelOrderKafka(msg.Value, taskCancelMinutes)
 	}
 }
 
@@ -145,7 +147,7 @@ func (cp OrderCreateNotify) publishTask() {
 		valueData, _ := json.Marshal(data)
 		var orderCancelKafka = request.OrderCancelKafka{Body: string(valueData), Properties: []string{}, Headers: []string{}}
 		kafkaData, _ := json.Marshal(orderCancelKafka)
-		err := cp.Infra.KafkaProducer.Publish(base.TOPIC_ORDER_CREATE_NOTIFIY, kafkaData)
+		err := cp.Infra.KafkaProducer.Publish(base.TOPIC_ORDER_STATUS, kafkaData)
 		if err != nil {
 			fmt.Printf("Failed to publish message: %v\n", err)
 		}
