@@ -147,7 +147,7 @@ func (cp OrderCreateNotify) publishTask() {
 		valueData, _ := json.Marshal(data)
 		var orderCancelKafka = request.OrderCancelKafka{Body: string(valueData), Properties: []string{}, Headers: []string{}}
 		kafkaData, _ := json.Marshal(orderCancelKafka)
-		err := cp.Infra.KafkaProducer.Publish(base.TOPIC_ORDER_CREATE_NOTIFIY, kafkaData)
+		err := cp.Infra.KafkaProducer.Publish(base.TOPIC_ORDER_STATUS, kafkaData)
 		if err != nil {
 			fmt.Printf("Failed to publish message: %v\n", err)
 		}

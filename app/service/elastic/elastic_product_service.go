@@ -16,6 +16,7 @@ import (
 
 type ElasticProductService interface {
 	Reindex(index string, productIDs string, storeID int, productType string, merchantID int, flush bool) error
+	//Search(ctx context.Context, input requestelastic.BannerRequest) ([]map[string]interface{}, base.Pagination, message.Message, error)
 }
 
 type elasticProductServiceImpl struct {

@@ -16,27 +16,27 @@ import (
 	"marketplace-svc/pkg/util"
 )
 
-type ElasticBannerService interface {
-	Search(ctx context.Context, input requestelastic.BannerRequest) ([]map[string]interface{}, base.Pagination, message.Message, error)
+type ElasticCategoryService interface {
+	Search(ctx context.Context, input requestelastic.CategoryRequest) ([]map[string]interface{}, base.Pagination, message.Message, error)
 }
 
-type elasticBannerServiceImpl struct {
+type elasticCategoryServiceImpl struct {
 	config        config.Config
 	logger        logger.Logger
 	baseRepo      repository.BaseRepository
 	elasticClient elastic.ElasticClient
 }
 
-func NewElasticBannerService(
+func NewElasticCategoryService(
 	config config.Config,
 	lg logger.Logger,
 	br repository.BaseRepository,
 	esc elastic.ElasticClient,
-) ElasticBannerService {
-	return &elasticBannerServiceImpl{config, lg, br, esc}
+) ElasticCategoryService {
+	return &elasticCategoryServiceImpl{config, lg, br, esc}
 }
 
-func (s elasticBannerServiceImpl) Search(_ context.Context, input requestelastic.BannerRequest) ([]map[string]interface{}, base.Pagination, message.Message, error) {
+func (s elasticCategoryServiceImpl) Search(_ context.Context, input requestelastic.CategoryRequest) ([]map[string]interface{}, base.Pagination, message.Message, error) {
 	var bannerResponse []map[string]interface{}
 	var pagination base.Pagination
 	msg := message.SuccessMsg
@@ -45,6 +45,7 @@ func (s elasticBannerServiceImpl) Search(_ context.Context, input requestelastic
 	if err != nil {
 		return bannerResponse, pagination, message.ErrNoIndexName, err
 	}
+	indexName = indexName + "_" + fmt.Sprint(input.StoreID)
 
 	params := s.buildQuerySearch(input)
 	resp, err := s.elasticClient.Search(context.Background(), indexName, params)
@@ -68,7 +69,7 @@ func (s elasticBannerServiceImpl) Search(_ context.Context, input requestelastic
 	return bannerResponse, pagination, msg, nil
 }
 
-func (s elasticBannerServiceImpl) defaultFields() []string {
+func (s elasticCategoryServiceImpl) defaultFields() []string {
 	return []string{
 		"id",
 		"title",
@@ -77,25 +78,12 @@ func (s elasticBannerServiceImpl) defaultFields() []string {
 	}
 }
 
-func (s elasticBannerServiceImpl) buildQuerySearch(input requestelastic.BannerRequest) map[string]interface{} {
+func (s elasticCategoryServiceImpl) buildQuerySearch(input requestelastic.CategoryRequest) map[string]interface{} {
 	queryArray := map[string]interface{}{}
-
-	// create query bool
-	if input.Query != "" {
-		queryArray["bool"] = map[string]interface{}{
-			"must": map[string]interface{}{
-				"multi_match": map[string]interface{}{
-					"query":  input.Query,
-					"fields": []string{"title"},
-				},
-			},
-		}
-	} else {
-		queryArray["bool"] = map[string]interface{}{
-			"must": map[string]interface{}{
-				"match_all": map[string]interface{}{},
-			},
-		}
+	queryArray["bool"] = map[string]interface{}{
+		"must": map[string]interface{}{
+			"match_all": map[string]interface{}{},
+		},
 	}
 
 	// default filter status
@@ -108,13 +96,53 @@ func (s elasticBannerServiceImpl) buildQuerySearch(input requestelastic.BannerRe
 	}
 
 	// filter
-	if input.CategorySlug != "" {
-		filterCategorySlug := map[string]interface{}{
-			"term": map[string]interface{}{
-				"category_slug": input.CategorySlug,
-			},
-		}
-		filters = append(filters, filterCategorySlug)
+	if input.Level != nil {
+		filters = append(filters,
+			map[string]interface{}{
+				"term": map[string]interface{}{
+					"level": *input.Level,
+				},
+			})
+	}
+	if input.Position != nil {
+		filters = append(filters,
+			map[string]interface{}{
+				"term": map[string]interface{}{
+					"position": *input.Position,
+				},
+			})
+	}
+	if input.ParentID != nil {
+		filters = append(filters,
+			map[string]interface{}{
+				"term": map[string]interface{}{
+					"parent_id": *input.ParentID,
+				},
+			})
+	}
+	if input.InHome != nil {
+		filters = append(filters,
+			map[string]interface{}{
+				"term": map[string]interface{}{
+					"in_home": *input.ParentID,
+				},
+			})
+	}
+	if input.InHomepage != nil {
+		filters = append(filters,
+			map[string]interface{}{
+				"term": map[string]interface{}{
+					"in_homepage": *input.ParentID,
+				},
+			})
+	}
+	if input.InMenu != nil {
+		filters = append(filters,
+			map[string]interface{}{
+				"term": map[string]interface{}{
+					"in_menu": *input.ParentID,
+				},
+			})
 	}
 
 	queryArray["bool"].(map[string]interface{})["filter"] = filters
@@ -133,8 +161,8 @@ func (s elasticBannerServiceImpl) buildQuerySearch(input requestelastic.BannerRe
 	return params
 }
 
-func (s elasticBannerServiceImpl) getIndexName() (string, error) {
-	indexName := s.config.Elastic.Index["index-banners"]
+func (s elasticCategoryServiceImpl) getIndexName() (string, error) {
+	indexName := s.config.Elastic.Index["index-category-store"]
 	if indexName == nil {
 		return "", errors.New("config index-banners not defined")
 	}
@@ -142,7 +170,7 @@ func (s elasticBannerServiceImpl) getIndexName() (string, error) {
 	return fmt.Sprint(indexName), nil
 }
 
-func (s elasticBannerServiceImpl) transformSearch(rs responseelastic.SearchResponse, fields []string) []map[string]interface{} {
+func (s elasticCategoryServiceImpl) transformSearch(rs responseelastic.SearchResponse, fields []string) []map[string]interface{} {
 	var response []map[string]interface{}
 
 	for _, item := range rs.Hits.Hits {

@@ -29,6 +29,7 @@ kafka:
 url:
   baseurl: /v3/marketplace/
   baseprefix: /v3/marketplace/
+  base-image-url: https://s3-v2-marketplace.s3.ap-southeast-1.amazonaws.com/m0cha-Goh1ahz1ti/
 
 server:
   port: 5700
@@ -37,6 +38,41 @@ server:
     level: info #debug, info, warn, error.
     output: console
     file-path: ./kd-microservice.log
+
+elastic:
+  host: http://elasticsearch-marketplace.klikdokter-stg.int:9200
+  username: marketplace_api
+  password: ooh9enoy4tieJaiz1Fei
+  index:
+    index-product-autocomplete : product
+    index-merchant : merchant
+    index-product-store : staging-2023-product-store
+    index-merchants : staging-merchants
+    index-merchants-zone : staging-merchants-zone
+    index-category-store : staging-category-store
+    index-category-tree : staging-category-tree
+    index-brands : staging-brands
+    index-cities : staging-cities
+    index-order : staging-order
+    index-order-draft : staging-order-draft
+    index-order-history : staging-order-history
+    index-fds-blacklist: fds-blacklist
+    index-fds-rule: fds-rule
+    index-wishlist : staging-wishlist
+    index-payment-method : staging-payment-method
+    index-discussions : discussions
+    index-discussions-merchant : discussions-merchant
+    index-events-reguler : staging-events-reguler
+    index-events-special : staging-events-special
+    index-events-category : staging-events-category
+    index-location : staging-location
+    index-banners : staging-banners
+    index-merchant-product-rating-summary : staging-merchant-product-rating-summary
+    index-voucher : staging-sales-voucher
+    index-provinces : staging-provinces
+    index-districts : staging-districts
+    index-subdistricts : staging-subdistricts
+    index-postalcodes : staging-postalcodes
 
 security:
   jwt:
@@ -52,12 +88,12 @@ security:
 
 kalcare-api:
   server: https://kd-api.medkomtek-stg.com/mp/v3
-  endpoint_auth: /auth/cms
-  endpoint_queue: /temp_order_status_queue
-  endpoint_webhook: /registered_webhook
-  user_cred:
-  pass_cred:
-  client_id: "client.cms-mocha-stg.backoffice"
+  endpoint-auth: /auth/cms
+  endpoint-queue: /temp-order-status-queue
+  endpoint-webhook: /registered-webhook
+  user-cred:
+  pass-cred:
+  client-id: "client.cms-mocha-stg.backoffice"
   cancel-hours: 0
   cancel-minutes: 1
   post-interval: 2
