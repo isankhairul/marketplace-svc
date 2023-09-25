@@ -26,3 +26,17 @@ type CategoryResponse struct {
 	Status          int    `json:"status,omitempty"`
 	CreatedAt       string `json:"created_at,omitempty"`
 }
+
+type CategoryTree struct {
+	ID              int            `json:"id,omitempty"`
+	Name            string         `json:"name,omitempty"`
+	Slug            string         `json:"slug,omitempty"`
+	URLKey          string         `json:"url_key,omitempty"`
+	Level           int            `json:"level,omitempty"`
+	ParentID        int            `json:"parent_id,omitempty"`
+	Icon            string         `json:"icon,omitempty"`
+	Image           string         `json:"image,omitempty"`
+	MetaTitle       string         `json:"meta_title,omitempty"`
+	MetaDescription string         `json:"meta_description,omitempty"`
+	Sub             []CategoryTree `json:"sub,omitempty"`
+}

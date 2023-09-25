@@ -27,9 +27,16 @@ func EsCategoryHttpHandler(s elasticservice.ElasticCategoryService, app *app.Inf
 		httpTransport.ServerBefore(jwt.HTTPToContext(), logger.TraceIdentifier()),
 	}
 
-	pr.Methods(http.MethodGet).Path(app.URLWithPrefix(_struct.PrefixES + "/category")).Handler(httpTransport.NewServer(
+	pr.Methods(http.MethodGet).Path(app.URLWithPrefix(_struct.PrefixES + "/categories")).Handler(httpTransport.NewServer(
 		ep.Search,
 		decodeRequestESCategory,
+		encoder.EncodeResponseHTTP,
+		options...,
+	))
+
+	pr.Methods(http.MethodGet).Path(app.URLWithPrefix(_struct.PrefixES + "/categories/tree")).Handler(httpTransport.NewServer(
+		ep.SearchTree,
+		decodeRequestESCategoryTree,
 		encoder.EncodeResponseHTTP,
 		options...,
 	))
@@ -60,6 +67,26 @@ func decodeRequestESCategory(ctx context.Context, r *http.Request) (rqst interfa
 	// Default page 1
 	if req.Page == 0 {
 		req.Page = 1
+	}
+
+	// default storeID
+	if req.StoreID == 0 {
+		req.StoreID = 1
+	}
+
+	return req, nil
+}
+
+func decodeRequestESCategoryTree(ctx context.Context, r *http.Request) (rqst interface{}, err error) {
+	var req requestelastic.CategoryTreeRequest
+	if err := r.ParseForm(); err != nil {
+		return nil, err
+	}
+
+	schDecoder := schema.NewDecoder()
+	schDecoder.IgnoreUnknownKeys(true)
+	if err = schDecoder.Decode(&req, r.Form); err != nil {
+		return nil, err
 	}
 
 	// default storeID

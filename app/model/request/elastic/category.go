@@ -20,3 +20,11 @@ func (b CategoryRequest) ToString() string {
 	return fmt.Sprintf("%s-%s-%d-%d-%d-%d-%d-%d-%d-%d-%d", //nolint:govet
 		b.Query, b.Fields, b.Level, b.Position, b.ParentID, b.InHome, b.InHomepage, b.InMenu, b.StoreID, b.Page, b.Limit)
 }
+
+type CategoryTreeRequest struct {
+	StoreID int `json:"store_id" schema:"store_id" binding:"omitempty"`
+}
+
+func (b CategoryTreeRequest) ToString() string {
+	return fmt.Sprintf("%d", b.StoreID)
+}
