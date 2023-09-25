@@ -39,9 +39,9 @@ func InitRouting(app *app.Infra) *http.ServeMux {
 		_, _ = w.Write([]byte(http.StatusText(http.StatusOK)))
 	})
 
-	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/banner"), middleware.Adapt(esBannerHttp, loggingMiddleware))
-	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/brand"), middleware.Adapt(esBrandHttp, loggingMiddleware))
-	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/category"), middleware.Adapt(esCategoryHttp, loggingMiddleware))
+	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/banner/"), middleware.Adapt(esBannerHttp, loggingMiddleware))
+	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/brand/"), middleware.Adapt(esBrandHttp, loggingMiddleware))
+	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/categories/"), middleware.Adapt(esCategoryHttp, loggingMiddleware))
 
 	return mux
 }
