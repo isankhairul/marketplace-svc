@@ -1,11 +1,8 @@
 package base
 
 import (
-	"fmt"
-	model_jwt "marketplace-svc/app/model/jwt"
 	"time"
 
-	"github.com/go-kit/kit/auth/jwt"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"gorm.io/gorm"
 
@@ -32,14 +29,6 @@ type BaseIDModel struct {
 
 func (base *BaseIDModel) BeforeCreate(tx *gorm.DB) error {
 	uid, _ := gonanoid.New()
-	payload := tx.Statement.Context.Value(jwt.JWTClaimsContextKey)
-	if user, ok := payload.(*model_jwt.ClaimsJWT); ok && user != nil {
-		tx.Statement.SetColumn("CreatedBy", user.Data.Name)
-		tx.Statement.SetColumn("CreatedByUid", user.Data.UserUid)
-		tx.Statement.SetColumn("UpdatedBy", user.Data.Name)
-		tx.Statement.SetColumn("UpdatedByUid", user.Data.UserUid)
-	}
-
 	tx.Statement.SetColumn("UID", uid)
 	tx.Statement.SetColumn("IsDeleted", false)
 	tx.Statement.SetColumn("CreatedAt", util.TimeNow())
@@ -48,12 +37,6 @@ func (base *BaseIDModel) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (base *BaseIDModel) BeforeUpdate(tx *gorm.DB) error {
-	payload := tx.Statement.Context.Value(jwt.JWTClaimsContextKey)
-	if user, ok := payload.(*model_jwt.ClaimsJWT); ok && user != nil {
-		tx.Statement.SetColumn("UpdatedBy", user.Data.Name)
-		tx.Statement.SetColumn("UpdatedByUid", user.Data.UserUid)
-	}
-
 	tx.Statement.SetColumn("UpdatedAt", util.TimeNow())
 	return nil
 }
@@ -78,14 +61,6 @@ type BaseIDModelEpoch struct {
 
 func (base *BaseIDModelEpoch) BeforeCreate(tx *gorm.DB) error {
 	uid, _ := gonanoid.New()
-	payload := tx.Statement.Context.Value(jwt.JWTClaimsContextKey)
-	if user, ok := payload.(*model_jwt.ClaimsJWT); ok && user != nil {
-		tx.Statement.SetColumn("CreatedBy", user.Data.Name)
-		tx.Statement.SetColumn("CreatedByUid", fmt.Sprint(user.Data.UserUid))
-		tx.Statement.SetColumn("UpdatedBy", user.Data.Name)
-		tx.Statement.SetColumn("UpdatedByUid", fmt.Sprint(user.Data.UserUid))
-	}
-
 	tx.Statement.SetColumn("UID", uid)
 	tx.Statement.SetColumn("IsDeleted", false)
 	tx.Statement.SetColumn("CreatedAt", util.TimeNow().Unix())
@@ -94,12 +69,6 @@ func (base *BaseIDModelEpoch) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (base *BaseIDModelEpoch) BeforeUpdate(tx *gorm.DB) error {
-	payload := tx.Statement.Context.Value(jwt.JWTClaimsContextKey)
-	if user, ok := payload.(*model_jwt.ClaimsJWT); ok && user != nil {
-		tx.Statement.SetColumn("UpdatedBy", user.Data.Name)
-		tx.Statement.SetColumn("UpdatedByUid", fmt.Sprint(user.Data.UserUid))
-	}
-
 	tx.Statement.SetColumn("UpdatedAt", util.TimeNow().Unix())
 	return nil
 }

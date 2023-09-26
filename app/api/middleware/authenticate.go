@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"marketplace-svc/app/model/base"
 	model_jwt "marketplace-svc/app/model/jwt"
 	"marketplace-svc/helper/cache"
@@ -41,15 +40,6 @@ func Authenticate(cfg *config.JwtConfig, cache cache.CacheDatabase) Middleware {
 			if err != nil {
 				msg := message.AuthenticationFailed
 				msg.Message = err.Error()
-				base.ResponseWriter(w, http.StatusUnauthorized, base.SetDefaultResponse(r.Context(), msg))
-				return
-			}
-			// single login, check token from cache
-			keyToken := "token"
-			tokenFromCache, _ := cache.Get(fmt.Sprintf("%s:%s", keyToken, payload.Data.UserID))
-			if tokenFromCache != "" && token != tokenFromCache {
-				msg := message.AuthenticationFailed
-				msg.Message = message.SessionLoginExpired.Message
 				base.ResponseWriter(w, http.StatusUnauthorized, base.SetDefaultResponse(r.Context(), msg))
 				return
 			}

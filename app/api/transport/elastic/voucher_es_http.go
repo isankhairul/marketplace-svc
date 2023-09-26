@@ -14,30 +14,31 @@ import (
 	"marketplace-svc/helper/_struct"
 	"marketplace-svc/helper/logger"
 	"net/http"
+	"strconv"
 )
 
-func EsBannerHttpHandler(s elasticservice.ElasticBannerService, app *app.Infra) http.Handler {
+func EsVoucherHttpHandler(s elasticservice.ElasticVoucherService, app *app.Infra) http.Handler {
 	pr := mux.NewRouter()
 
-	ep := endpointelastic.MakeEsBannerEndpoints(s)
+	ep := endpointelastic.MakeEsVoucherEndpoints(s)
 	options := []httpTransport.ServerOption{
 		httpTransport.ServerErrorHandler(app.Log),
 		httpTransport.ServerErrorEncoder(encoder.EncodeError),
 		httpTransport.ServerBefore(jwt.HTTPToContext(), logger.TraceIdentifier()),
 	}
 
-	pr.Methods(http.MethodGet).Path(app.URLWithPrefix(_struct.PrefixES + "/banner")).Handler(httpTransport.NewServer(
+	pr.Methods(http.MethodGet).Path(app.URLWithPrefix(_struct.PrefixES + "/voucher/{criteria}/{value}/store/{storeID}")).Handler(httpTransport.NewServer(
 		ep.Search,
-		decodeRequestESBanner,
+		decodeRequestESVoucher,
 		encoder.EncodeResponseHTTP,
-		options...,
+		append(options, httpTransport.ServerBefore(jwt.HTTPToContext()))...,
 	))
 
 	return pr
 }
 
-func decodeRequestESBanner(ctx context.Context, r *http.Request) (rqst interface{}, err error) {
-	var req requestelastic.BannerRequest
+func decodeRequestESVoucher(ctx context.Context, r *http.Request) (rqst interface{}, err error) {
+	var req requestelastic.VoucherRequest
 	if err := r.ParseForm(); err != nil {
 		return nil, err
 	}
@@ -48,7 +49,19 @@ func decodeRequestESBanner(ctx context.Context, r *http.Request) (rqst interface
 		return nil, err
 	}
 
-	// Default and max LIMIT
+	criteria := mux.Vars(r)["criteria"]
+	value := mux.Vars(r)["value"]
+	storeID := 0
+	if mux.Vars(r)["storeID"] != "" {
+		intStoreID, _ := strconv.Atoi(mux.Vars(r)["storeID"])
+		storeID = intStoreID
+	}
+	
+	req.Criteria = criteria
+	req.Value = value
+	req.StoreID = storeID
+
+	// Set Default
 	req = req.DefaultPagination()
 
 	return req, nil

@@ -8,7 +8,6 @@ import (
 	"github.com/gorilla/schema"
 	"marketplace-svc/app"
 	endpointelastic "marketplace-svc/app/api/endpoint/elastic"
-	"marketplace-svc/app/model/base"
 	"marketplace-svc/app/model/base/encoder"
 	requestelastic "marketplace-svc/app/model/request/elastic"
 	elasticservice "marketplace-svc/app/service/elastic"
@@ -57,22 +56,7 @@ func decodeRequestESCategory(ctx context.Context, r *http.Request) (rqst interfa
 	}
 
 	// Default and max LIMIT
-	if req.Limit == 0 {
-		req.Limit = base.PAGINATION_MIN_LIMIT
-	}
-	if req.Limit > base.PAGINATION_MAX_LIMIT {
-		req.Limit = base.PAGINATION_MAX_LIMIT
-	}
-
-	// Default page 1
-	if req.Page == 0 {
-		req.Page = 1
-	}
-
-	// default storeID
-	if req.StoreID == 0 {
-		req.StoreID = 1
-	}
+	req = req.DefaultPagination()
 
 	return req, nil
 }
@@ -90,9 +74,7 @@ func decodeRequestESCategoryTree(ctx context.Context, r *http.Request) (rqst int
 	}
 
 	// default storeID
-	if req.StoreID == 0 {
-		req.StoreID = 1
-	}
+	req = req.DefaultPagination()
 
 	return req, nil
 }

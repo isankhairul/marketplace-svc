@@ -3,6 +3,7 @@ package elasticregistry
 import (
 	"marketplace-svc/app"
 	rp "marketplace-svc/app/repository"
+	rppromo "marketplace-svc/app/repository/promotion"
 	elasticservice "marketplace-svc/app/service/elastic"
 	"marketplace-svc/helper/elastic"
 )
@@ -43,6 +44,17 @@ func RegisterEsCategoryService(app *app.Infra) elasticservice.ElasticCategorySer
 		*app.Config,
 		app.Log,
 		rp.NewBaseRepository(app.DB),
+		ec,
+	)
+}
+
+func RegisterEsVoucherService(app *app.Infra) elasticservice.ElasticVoucherService {
+	ec, _ := elastic.NewElasticClient(&app.Config.Elastic, app.Log)
+	return elasticservice.NewElasticVoucherService(
+		*app.Config,
+		app.Log,
+		rp.NewBaseRepository(app.DB),
+		rppromo.NewPromotionScprCustomerCouponRepository(rp.NewBaseRepository(app.DB)),
 		ec,
 	)
 }
