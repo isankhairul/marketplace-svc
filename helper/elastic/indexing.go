@@ -1,7 +1,6 @@
 package elastic
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -11,6 +10,7 @@ import (
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"golang.org/x/exp/slices"
+	"io"
 	"log"
 	"marketplace-svc/pkg/util"
 	"os"
@@ -50,13 +50,17 @@ func (e elasticClient) BulkIndex(body []interface{}, indexName string, filename 
 	e.GetLogger().Info("indexName: " + indexName + ", totalBody: " + fmt.Sprint(len(body)) + ", chunkPartition: " + fmt.Sprint(chunkPartition))
 
 	arrChunkBody := util.ChunkSlice(body, chunkPartition)
-	pool := pond.New(10, len(body), pond.IdleTimeout(30*time.Second))
+	// Custom panic handler function
+	panicHandler := func(p interface{}) {
+		fmt.Printf("Task panicked: %v", p)
+	}
+	pool := pond.New(10, len(body), pond.IdleTimeout(30*time.Second), pond.PanicHandler(panicHandler))
 
 	for _, arrBodys := range arrChunkBody {
 		arrBody := arrBodys
 		pool.Submit(func() {
 			var ndJSON bytes.Buffer
-			enc := json.NewEncoder(bufio.NewWriter(&ndJSON))
+			enc := json.NewEncoder(io.Writer(&ndJSON))
 			var arrBodyUpdated []interface{}
 
 			// loop for add header index and _id
@@ -68,6 +72,7 @@ func (e elasticClient) BulkIndex(body []interface{}, indexName string, filename 
 				if id == "" {
 					continue
 				}
+				// set _id for upsert
 				mapHeader := map[string]interface{}{
 					"index": map[string]string{"_id": id, "_index": indexName},
 				}

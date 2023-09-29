@@ -18,8 +18,8 @@ type CatalogProduct struct {
 	ElasticProductService elasticservice.ElasticProductService
 }
 
-func NewCatalogProduct(infra app.Infra) IWorker {
-	return &CatalogProduct{
+func NewCatalogProduct(infra app.Infra) CatalogProduct {
+	return CatalogProduct{
 		Infra:                 infra,
 		Topic:                 base.TOPIC_CATALOG_PRODUCT,
 		ElasticProductService: elasticregistry.RegisterEsProductService(&infra),

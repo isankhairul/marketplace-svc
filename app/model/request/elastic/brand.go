@@ -1,6 +1,9 @@
 package requestelastic
 
-import "fmt"
+import (
+	"fmt"
+	"marketplace-svc/app/model/base"
+)
 
 type BrandRequest struct {
 	Query         string `json:"q" schema:"q" binding:"omitempty"`
@@ -16,4 +19,25 @@ type BrandRequest struct {
 func (b BrandRequest) ToString() string {
 	return fmt.Sprintf("%s-%s-%s-%s-%d-%d-%d-%d", //nolint:govet
 		b.Query, b.Fields, b.PrefixName, b.PrincipalCode, b.ShowOfficial, b.StoreID, b.Page, b.Limit)
+}
+
+func (req BrandRequest) DefaultPagination() BrandRequest {
+	if req.Limit == 0 {
+		req.Limit = base.PAGINATION_MIN_LIMIT
+	}
+	if req.Limit > base.PAGINATION_MAX_LIMIT {
+		req.Limit = base.PAGINATION_MAX_LIMIT
+	}
+
+	// Default page 1
+	if req.Page == 0 {
+		req.Page = 1
+	}
+
+	// default storeID
+	if req.StoreID == 0 {
+		req.StoreID = 1
+	}
+
+	return req
 }

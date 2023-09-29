@@ -2,49 +2,32 @@ package model_jwt
 
 import (
 	jwtgo "github.com/golang-jwt/jwt"
-	"gorm.io/datatypes"
 )
 
-type PayloadUser struct {
-	// ID        int    `json:"id"`
-	UserID     string         `json:"user_id"`
-	UserUid    string         `json:"user_uid"`
-	Name       string         `json:"name"`
-	Email      string         `json:"email"`
-	Telephone  string         `json:"telephone"`
-	Vip        bool           `json:"vip"`
-	Apotek     datatypes.JSON `json:"apotek"`
-	Hospitals  []Hospital     `json:"hospitals"`
-	UserType   string         `json:"user_type"`
-	Profession string         `json:"profession"`
-}
-
 type ClaimsJWT struct {
-	Exp      int         `json:"exp"`
-	Iat      int         `json:"iat"`
-	AuthTime int         `json:"auth_time"`
-	Data     PayloadUser `json:"data"`
+	Exp            int      `json:"exp"`
+	Iat            int      `json:"iat"`
+	Jti            string   `json:"jti"`
+	Iss            string   `json:"iss"`
+	Sub            string   `json:"sub"`
+	Typ            string   `json:"typ"`
+	Azp            string   `json:"azp"`
+	SessionState   string   `json:"session_state"`
+	Acr            string   `json:"acr"`
+	AllowedOrigins []string `json:"allowed-origins"`
+	Scope          string   `json:"scope"`
+	Sid            string   `json:"sid"`
+	UserIDLegacy   string   `json:"user_id_legacy"`
+	MemberID       string   `json:"member_id"`
+	FullName       string   `json:"full_name"`
+	GroupID        int      `json:"group_id"`
+	Phone          string   `json:"phone"`
+	Topic          []int    `json:"topic"`
+	Avatar         string   `json:"avatar"`
+	ID             string   `json:"id"`
+	CustomerID     int      `json:"customer_id"`
+	ContactID      string   `json:"contact_id"`
+	Email          string   `json:"email"`
+	Group          string   `json:"group"`
 	jwtgo.StandardClaims
-}
-
-type Hospital struct {
-	Key             int    `json:"key"`
-	Value           string `json:"value"`
-	Role            string `json:"role"`
-	InstitutionType int    `json:"institution_type"`
-}
-
-func DataTokenMapToResponse(data ClaimsJWT) *PayloadUser {
-	return &PayloadUser{
-		UserID:     data.Data.UserID,
-		UserUid:    data.Data.UserUid,
-		Name:       data.Data.Name,
-		Email:      data.Data.Email,
-		Apotek:     data.Data.Apotek,
-		Telephone:  data.Data.Telephone,
-		Hospitals:  data.Data.Hospitals,
-		Vip:        data.Data.Vip,
-		UserType:   data.Data.UserType,
-		Profession: data.Data.Profession,
-	}
 }
