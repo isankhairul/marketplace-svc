@@ -239,6 +239,11 @@ func (s elasticVoucherServiceImpl) getIndexName() (string, error) {
 
 func (s elasticVoucherServiceImpl) transformSearch(ctx context.Context, rs responseelastic.SearchResponse, fields []string, input requestelastic.VoucherRequest) []map[string]interface{} {
 	var response []map[string]interface{}
+	customerID := 0
+	user, isValid := middleware.IsAuthContext(ctx)
+	if isValid && user.CustomerID != 0 {
+		customerID = user.CustomerID
+	}
 
 	for _, item := range rs.Hits.Hits {
 		var tmpResponse map[string]interface{}
@@ -264,11 +269,6 @@ func (s elasticVoucherServiceImpl) transformSearch(ctx context.Context, rs respo
 		// get customer claimed
 		dbc := repository.NewDBContext(s.baseRepo.GetDB(), ctx)
 		intID, _ := strconv.Atoi(fmt.Sprint(tmpResponse["id"]))
-		customerID := 0
-		user, isValid := middleware.IsAuthContext(ctx)
-		if isValid && user.CustomerID != 0 {
-			customerID = user.CustomerID
-		}
 		isClaimed := s.voucherRepo.CheckClaimed(dbc, intID, customerID, input.StoreID)
 
 		// format new response

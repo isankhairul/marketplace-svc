@@ -14,14 +14,15 @@ func ExtractClaims(bearerToken string, cfg config.JwtConfig) (jwtgo.MapClaims, e
 		return nil, errors.New("bearer Token is empty")
 	}
 
-	token, err := jwtgo.ParseWithClaims(bearerToken, jwtgo.MapClaims{}, func(token *jwtgo.Token) (interface{}, error) {
+	token, _ := jwtgo.ParseWithClaims(bearerToken, jwtgo.MapClaims{}, func(token *jwtgo.Token) (interface{}, error) {
 		return []byte(cfg.Key), nil
 	})
 
+	// validate in krakend, only extract
 	// err include: expired, not valid secret-key
-	if err != nil {
-		return nil, err
-	}
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	// check valid bearer token with publishing jwt-login-secret
 	if token == nil {

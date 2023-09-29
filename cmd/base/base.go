@@ -3,6 +3,7 @@ package cmdbase
 import (
 	"github.com/urfave/cli/v2"
 	"marketplace-svc/app"
+	"marketplace-svc/cmd/tasks"
 	"marketplace-svc/cmd/worker"
 )
 
@@ -32,7 +33,8 @@ func NewBaseCommand(infra app.Infra) *BaseCommand {
 
 func (base *BaseCommand) PopulateCommand() *BaseCommand {
 	cmdWorker := worker.GetWorkerHandlerCommand(base.Infra)
-	arrCmd := []*cli.Command{cmdWorker}
+	cmdTask := tasks.GetTasksHandlerCommand(base.Infra)
+	arrCmd := []*cli.Command{cmdWorker, cmdTask}
 	base.Cmd.Commands = arrCmd
 
 	return base

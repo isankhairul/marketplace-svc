@@ -24,8 +24,8 @@ type OrderCreateNotify struct {
 	Infra app.Infra
 }
 
-func NewOrderCreateNotify(infra app.Infra) IWorker {
-	return &OrderCreateNotify{
+func NewOrderCreateNotify(infra app.Infra) OrderCreateNotify {
+	return OrderCreateNotify{
 		Infra: infra,
 		Topic: base.TOPIC_ORDER_CREATE_NOTIFIY,
 	}

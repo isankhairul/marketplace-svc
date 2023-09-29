@@ -15,6 +15,9 @@ import (
 )
 
 func InitRouting(app *app.Infra) *http.ServeMux {
+	//authenticate
+	authMiddleware := middleware.Authenticate(app.Config.Security.JwtConfig)
+
 	// logging
 	loggingMiddleware := logger.LoggingMiddleware(app.Log)
 
@@ -44,7 +47,7 @@ func InitRouting(app *app.Infra) *http.ServeMux {
 	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/banner/"), middleware.Adapt(esBannerHttp, loggingMiddleware))
 	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/brand/"), middleware.Adapt(esBrandHttp, loggingMiddleware))
 	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/categories/"), middleware.Adapt(esCategoryHttp, loggingMiddleware))
-	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/voucher/"), middleware.Adapt(esVoucherHttp, loggingMiddleware))
+	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/voucher/"), middleware.Adapt(esVoucherHttp, loggingMiddleware, authMiddleware))
 
 	return mux
 }

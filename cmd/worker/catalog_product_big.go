@@ -14,8 +14,8 @@ type CatalogProductBig struct {
 	Infra app.Infra
 }
 
-func NewCatalogProductBig(infra app.Infra) IWorker {
-	return &CatalogProductBig{
+func NewCatalogProductBig(infra app.Infra) CatalogProductBig {
+	return CatalogProductBig{
 		Infra: infra,
 		Topic: base.TOPIC_CATALOG_PRODUCT_BIG,
 	}

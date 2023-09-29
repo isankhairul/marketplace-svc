@@ -2,13 +2,10 @@ package middleware
 
 import (
 	"context"
-	"marketplace-svc/app/model/base"
 	model_jwt "marketplace-svc/app/model/jwt"
-	"marketplace-svc/helper/cache"
 	"marketplace-svc/helper/config"
 	"marketplace-svc/helper/global"
 	helperjwt "marketplace-svc/helper/jwt"
-	"marketplace-svc/helper/message"
 	"net/http"
 
 	"github.com/go-kit/kit/auth/jwt"
@@ -19,30 +16,20 @@ type AuthenticateError interface {
 	error() error
 }
 
-func Authenticate(cfg *config.JwtConfig, cache cache.CacheDatabase) Middleware {
+func Authenticate(cfg config.JwtConfig) Middleware {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if cfg.SkipValidation {
 				h.ServeHTTP(w, r)
 				return
 			}
-
-			token, ok := global.ExtractTokenFromAuthHeader(r.Header.Get("Authorization"))
-			if !ok {
-				base.ResponseWriter(w, http.StatusUnauthorized, base.SetDefaultResponse(r.Context(), message.UnauthorizedError))
-				return
-			}
-
+			token, _ := global.ExtractTokenFromAuthHeader(r.Header.Get("Authorization"))
+			//if !ok {
+			//	base.ResponseWriter(w, http.StatusUnauthorized, base.SetDefaultResponse(r.Context(), message.UnauthorizedError))
+			//	return
+			//}
 			// use model_jwt.ClaimsJWT or global.JWTPayload ?
-			payload, err := helperjwt.ExtractToken(token, *cfg)
-			//payload, err := global.JWTInfoToStruct(token)
-
-			if err != nil {
-				msg := message.AuthenticationFailed
-				msg.Message = err.Error()
-				base.ResponseWriter(w, http.StatusUnauthorized, base.SetDefaultResponse(r.Context(), msg))
-				return
-			}
+			payload, _ := helperjwt.ExtractToken(token, cfg)
 
 			ctx := context.WithValue(r.Context(), jwt.JWTClaimsContextKey, payload)
 			ctx = context.WithValue(ctx, jwt.JWTContextKey, token)
