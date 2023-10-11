@@ -20,6 +20,7 @@ import (
 type ElasticMerchantService interface {
 	Search(ctx context.Context, input requestelastic.MerchantRequest) ([]map[string]interface{}, base.Pagination, message.Message, error)
 	Detail(ctx context.Context, input requestelastic.MerchantDetailRequest) (map[string]interface{}, message.Message, error)
+	SearchByZipcode(ctx context.Context, input requestelastic.MerchantZipcodeRequest) ([]map[string]interface{}, base.Pagination, message.Message, error)
 }
 
 type elasticMerchantServiceImpl struct {
@@ -215,6 +216,15 @@ func (s elasticMerchantServiceImpl) getIndexName() (string, error) {
 	return fmt.Sprint(indexName), nil
 }
 
+func (s elasticMerchantServiceImpl) getIndexNameZone() (string, error) {
+	indexName := s.config.Elastic.Index["index-merchants-zone"]
+	if indexName == nil {
+		return "", errors.New("config index-merchants-zone not defined")
+	}
+
+	return fmt.Sprint(indexName), nil
+}
+
 func (s elasticMerchantServiceImpl) transformSearch(rs responseelastic.SearchResponse, fields []string) []map[string]interface{} {
 	var response []map[string]interface{}
 
@@ -246,10 +256,17 @@ func (s elasticMerchantServiceImpl) Detail(_ context.Context, input requestelast
 	queryArray := map[string]interface{}{}
 
 	// create query bool
+	fieldsWhere := "slug"
+	var fieldValue interface{} = input.Slug
+
+	if input.ID != 0 {
+		fieldsWhere = "id"
+		fieldValue = input.ID
+	}
 	queryArray["bool"] = map[string]interface{}{
 		"must": map[string]interface{}{
-			"term": map[string]string{
-				"slug": strings.Trim(input.Slug, ""),
+			"term": map[string]interface{}{
+				fieldsWhere: fieldValue,
 			},
 		},
 	}
@@ -262,7 +279,6 @@ func (s elasticMerchantServiceImpl) Detail(_ context.Context, input requestelast
 			},
 		})
 	}
-	fmt.Println("filters", filters)
 
 	params := map[string]interface{}{
 		"query": queryArray,
@@ -290,6 +306,74 @@ func (s elasticMerchantServiceImpl) Detail(_ context.Context, input requestelast
 	var responseElastic responseelastic.SearchResponse
 	_ = json.NewDecoder(resp.Body).Decode(&responseElastic)
 	arrMerchantResponse := s.transformSearch(responseElastic, arrFields)
+	if len(arrMerchantResponse) == 0 {
+		return merchantResponse, message.ErrNoData, errors.New(message.ErrNoData.Message)
+	}
 
 	return arrMerchantResponse[0], msg, nil
+}
+
+func (s elasticMerchantServiceImpl) SearchByZipcode(ctx context.Context, input requestelastic.MerchantZipcodeRequest) ([]map[string]interface{}, base.Pagination, message.Message, error) {
+	var merchantResponse []map[string]interface{}
+	var pagination base.Pagination
+	msg := message.SuccessMsg
+
+	// create query bool
+	queryArray := map[string]interface{}{}
+	queryArray["bool"] = map[string]interface{}{
+		"filter": map[string]interface{}{
+			"term": map[string]string{
+				"zipcode": strings.Trim(input.Zipcode, ""),
+			},
+		},
+	}
+	querySort := map[string]string{"priority": "asc"}
+
+	// pagination
+	from := (input.Page - 1) * input.Limit
+	params := map[string]interface{}{
+		"query": queryArray,
+		"from":  from,
+		"size":  input.Limit,
+		"sort":  querySort,
+	}
+	indexName, err := s.getIndexNameZone()
+	if err != nil {
+		return merchantResponse, pagination, message.ErrNoIndexName, err
+	}
+
+	resp, err := s.elasticClient.Search(context.Background(), indexName, params)
+	if err != nil {
+		s.logger.Error(errors.New("error request elastic: " + err.Error()))
+		return merchantResponse, pagination, message.ErrES, err
+	}
+
+	// requested fields
+	arrFields := s.defaultFields()
+	if input.Fields != "" {
+		fields := util.StringExplode(input.Fields, ",")
+		arrFields = append(arrFields, fields...)
+	}
+
+	var responseElastic responseelastic.SearchResponse
+	_ = json.NewDecoder(resp.Body).Decode(&responseElastic)
+	pagination = s.elasticClient.Pagination(responseElastic, input.Page, input.Limit)
+
+	// populate to detail merchant
+	if len(responseElastic.Hits.Hits) > 0 {
+		for _, val := range responseElastic.Hits.Hits {
+			var tmpResponse map[string]interface{}
+			jsonItem, _ := json.Marshal(val.Source)
+			_ = json.Unmarshal(jsonItem, &tmpResponse)
+			reqDetail := requestelastic.MerchantDetailRequest{ID: int(tmpResponse["merchant_id"].(float64))}
+			dSource, _, err := s.Detail(ctx, reqDetail)
+
+			if err == nil && dSource["id"] != nil {
+				dSource["priority"] = tmpResponse["priority"]
+				merchantResponse = append(merchantResponse, dSource)
+			}
+		}
+	}
+
+	return merchantResponse, pagination, msg, nil
 }

@@ -40,6 +40,13 @@ func EsMerchantHttpHandler(s elasticservice.ElasticMerchantService, app *app.Inf
 		options...,
 	))
 
+	pr.Methods(http.MethodGet).Path(app.URLWithPrefix(_struct.PrefixES + "/merchant/zipcode/{zipcode}")).Handler(httpTransport.NewServer(
+		ep.SearchByZipcode,
+		decodeRequestESMerchantByZipcode,
+		encoder.EncodeResponseHTTP,
+		options...,
+	))
+
 	return pr
 }
 
@@ -79,6 +86,26 @@ func decodeRequestESMerchantDetail(ctx context.Context, r *http.Request) (rqst i
 	}
 	slug := mux.Vars(r)["slug"]
 	req.Slug = slug
-	
+
+	return req, nil
+}
+
+func decodeRequestESMerchantByZipcode(ctx context.Context, r *http.Request) (rqst interface{}, err error) {
+	var req requestelastic.MerchantZipcodeRequest
+	if err := r.ParseForm(); err != nil {
+		return nil, err
+	}
+
+	schDecoder := schema.NewDecoder()
+	schDecoder.IgnoreUnknownKeys(true)
+	if err = schDecoder.Decode(&req, r.Form); err != nil {
+		return nil, err
+	}
+
+	// Default and max LIMIT
+	req = req.DefaultPagination()
+	zipcode := mux.Vars(r)["zipcode"]
+	req.Zipcode = zipcode
+
 	return req, nil
 }
