@@ -8,19 +8,22 @@ import (
 type MerchantRequest struct {
 	Query   string `json:"q" schema:"q" binding:"omitempty"`
 	Fields  string `json:"fields" schema:"fields" binding:"omitempty"`
-	PID     *int   `json:"pid" schema:"pid"`
-	CID     *int   `json:"cid" schema:"cid"`
+	PID     string `json:"pid" schema:"pid"`
+	CID     string `json:"cid" schema:"cid"`
 	Rating  string `json:"rating" schema:"rating"`
 	Type    string `json:"type" schema:"type"`
 	Zipcode string `json:"zipcode" schema:"zipcode"`
 	StoreID int    `json:"store_id" schema:"store_id" binding:"omitempty"`
+	Store   string `json:"store" schema:"store" binding:"omitempty"`
+	Sort    string `json:"sort" schema:"sort" binding:"omitempty"`
+	Dir     string `json:"dir" schema:"dir" binding:"omitempty"`
 	Page    int    `json:"page" schema:"page" binding:"omitempty"`
 	Limit   int    `json:"limit" schema:"limit" binding:"omitempty"`
 }
 
-func (b MerchantRequest) ToString() string {
+func (req MerchantRequest) ToString() string {
 	return fmt.Sprintf("%s-%s-%d-%d-%s-%s-%s-%d-%d-%d", //nolint:govet
-		b.Query, b.Fields, b.PID, b.CID, b.Rating, b.Type, b.Zipcode, b.StoreID, b.Page, b.Limit)
+		req.Query, req.Fields, req.PID, req.CID, req.Rating, req.Type, req.Zipcode, req.StoreID, req.Page, req.Limit)
 }
 
 func (req MerchantRequest) DefaultPagination() MerchantRequest {
@@ -42,4 +45,14 @@ func (req MerchantRequest) DefaultPagination() MerchantRequest {
 	}
 
 	return req
+}
+
+type MerchantDetailRequest struct {
+	Slug    string `json:"slug" schema:"slug" binding:"omitempty"`
+	Fields  string `json:"fields" schema:"fields" binding:"omitempty"`
+	StoreID int    `json:"store_id" schema:"store_id" binding:"omitempty"`
+}
+
+func (req MerchantDetailRequest) ToString() string {
+	return fmt.Sprintf("%s-%d", req.Fields, req.StoreID)
 }

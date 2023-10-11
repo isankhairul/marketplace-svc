@@ -20,6 +20,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/spf13/viper"
 	"marketplace-svc/app"
 	"marketplace-svc/app/api/initialization"
 	"marketplace-svc/app/api/middleware"
@@ -45,11 +46,22 @@ func main() {
 
 	log := infra.Log
 
+	log.Info("sentry: " + fmt.Sprint(viper.GetBool("sentry.is-active")))
+
+	// sentry
+	if viper.GetBool("sentry.is-active") {
+		err := initialization.InitSentry()
+		if err != nil {
+			log.Error(err)
+		}
+		log.Info("Connection Sentry Success")
+	}
+
 	// Routing initialization
 	mux := initialization.InitRouting(infra)
-	address := *flag.String("listen", ":"+strconv.Itoa(cfg.Server.Port), "Listen address.")
+	address := flag.String("listen", ":"+strconv.Itoa(cfg.Server.Port), "Listen address.")
 	httpServer := http.Server{
-		Addr:    address,
+		Addr:    *address,
 		Handler: middleware.ServeHTTP(mux, infra.Log),
 	}
 

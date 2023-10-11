@@ -26,7 +26,7 @@ func EsBrandHttpHandler(s elasticservice.ElasticBrandService, app *app.Infra) ht
 		httpTransport.ServerBefore(jwt.HTTPToContext(), logger.TraceIdentifier()),
 	}
 
-	pr.Methods(http.MethodGet).Path(app.URLWithPrefix(_struct.PrefixES + "/brand")).Handler(httpTransport.NewServer(
+	pr.Methods(http.MethodGet).Path(app.URLWithPrefix(_struct.PrefixES + "/brand/")).Handler(httpTransport.NewServer(
 		ep.Search,
 		decodeRequestESBrand,
 		encoder.EncodeResponseHTTP,

@@ -16,26 +16,26 @@ import (
 	"net/http"
 )
 
-func EsCategoryHttpHandler(s elasticservice.ElasticCategoryService, app *app.Infra) http.Handler {
+func EsMerchantHttpHandler(s elasticservice.ElasticMerchantService, app *app.Infra) http.Handler {
 	pr := mux.NewRouter()
 
-	ep := endpointelastic.MakeEsCategoryEndpoints(s)
+	ep := endpointelastic.MakeEsMerchantEndpoints(s)
 	options := []httpTransport.ServerOption{
 		httpTransport.ServerErrorHandler(app.Log),
 		httpTransport.ServerErrorEncoder(encoder.EncodeError),
 		httpTransport.ServerBefore(jwt.HTTPToContext(), logger.TraceIdentifier()),
 	}
 
-	pr.Methods(http.MethodGet).Path(app.URLWithPrefix(_struct.PrefixES + "/categories/")).Handler(httpTransport.NewServer(
+	pr.Methods(http.MethodGet).Path(app.URLWithPrefix(_struct.PrefixES + "/merchant/")).Handler(httpTransport.NewServer(
 		ep.Search,
-		decodeRequestESCategory,
+		decodeRequestESMerchant,
 		encoder.EncodeResponseHTTP,
 		options...,
 	))
 
-	pr.Methods(http.MethodGet).Path(app.URLWithPrefix(_struct.PrefixES + "/categories/tree")).Handler(httpTransport.NewServer(
-		ep.SearchTree,
-		decodeRequestESCategoryTree,
+	pr.Methods(http.MethodGet).Path(app.URLWithPrefix(_struct.PrefixES + "/merchant/{slug}")).Handler(httpTransport.NewServer(
+		ep.Detail,
+		decodeRequestESMerchantDetail,
 		encoder.EncodeResponseHTTP,
 		options...,
 	))
@@ -43,8 +43,8 @@ func EsCategoryHttpHandler(s elasticservice.ElasticCategoryService, app *app.Inf
 	return pr
 }
 
-func decodeRequestESCategory(ctx context.Context, r *http.Request) (rqst interface{}, err error) {
-	var req requestelastic.CategoryRequest
+func decodeRequestESMerchant(ctx context.Context, r *http.Request) (rqst interface{}, err error) {
+	var req requestelastic.MerchantRequest
 	if err := r.ParseForm(); err != nil {
 		return nil, err
 	}
@@ -61,8 +61,8 @@ func decodeRequestESCategory(ctx context.Context, r *http.Request) (rqst interfa
 	return req, nil
 }
 
-func decodeRequestESCategoryTree(ctx context.Context, r *http.Request) (rqst interface{}, err error) {
-	var req requestelastic.CategoryTreeRequest
+func decodeRequestESMerchantDetail(ctx context.Context, r *http.Request) (rqst interface{}, err error) {
+	var req requestelastic.MerchantDetailRequest
 	if err := r.ParseForm(); err != nil {
 		return nil, err
 	}
@@ -74,7 +74,11 @@ func decodeRequestESCategoryTree(ctx context.Context, r *http.Request) (rqst int
 	}
 
 	// default storeID
-	req = req.DefaultPagination()
-
+	if req.StoreID == 0 {
+		req.StoreID = 1
+	}
+	slug := mux.Vars(r)["slug"]
+	req.Slug = slug
+	
 	return req, nil
 }
