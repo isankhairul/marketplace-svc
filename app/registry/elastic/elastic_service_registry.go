@@ -58,3 +58,13 @@ func RegisterEsVoucherService(app *app.Infra) elasticservice.ElasticVoucherServi
 		ec,
 	)
 }
+
+func RegisterEsMerchantService(app *app.Infra) elasticservice.ElasticMerchantService {
+	ec, _ := elastic.NewElasticClient(&app.Config.Elastic, app.Log)
+	return elasticservice.NewElasticMerchantService(
+		*app.Config,
+		app.Log,
+		rp.NewBaseRepository(app.DB),
+		ec,
+	)
+}

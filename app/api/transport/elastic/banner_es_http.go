@@ -26,7 +26,7 @@ func EsBannerHttpHandler(s elasticservice.ElasticBannerService, app *app.Infra) 
 		httpTransport.ServerBefore(jwt.HTTPToContext(), logger.TraceIdentifier()),
 	}
 
-	pr.Methods(http.MethodGet).Path(app.URLWithPrefix(_struct.PrefixES + "/banner")).Handler(httpTransport.NewServer(
+	pr.Methods(http.MethodGet).Path(app.URLWithPrefix(_struct.PrefixES + "/banner/")).Handler(httpTransport.NewServer(
 		ep.Search,
 		decodeRequestESBanner,
 		encoder.EncodeResponseHTTP,
