@@ -68,3 +68,13 @@ func RegisterEsMerchantService(app *app.Infra) elasticservice.ElasticMerchantSer
 		ec,
 	)
 }
+
+func RegisterEsOrderService(app *app.Infra) elasticservice.ElasticOrderService {
+	ec, _ := elastic.NewElasticClient(&app.Config.Elastic, app.Log)
+	return elasticservice.NewElasticOrderService(
+		*app.Config,
+		app.Log,
+		rp.NewBaseRepository(app.DB),
+		ec,
+	)
+}
