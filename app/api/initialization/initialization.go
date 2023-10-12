@@ -33,6 +33,7 @@ func InitRouting(app *app.Infra) *http.ServeMux {
 	esCategorySvc := elasticregistry.RegisterEsCategoryService(app)
 	esVoucherSvc := elasticregistry.RegisterEsVoucherService(app)
 	esMerchantSvc := elasticregistry.RegisterEsMerchantService(app)
+	esOrderSvc := elasticregistry.RegisterEsOrderService(app)
 
 	//  Transport initialization
 	swagHttp := transport.SwaggerHttpHandler(app.Config.URL) //don't delete or change this !!
@@ -43,6 +44,7 @@ func InitRouting(app *app.Infra) *http.ServeMux {
 	esCategoryHttp := transportelastic.EsCategoryHttpHandler(esCategorySvc, app)
 	esVoucherHttp := transportelastic.EsVoucherHttpHandler(esVoucherSvc, app)
 	esMerchantHttp := transportelastic.EsMerchantHttpHandler(esMerchantSvc, app)
+	esOrderHttp := transportelastic.EsOrderHttpHandler(esOrderSvc, app)
 
 	// Routing path
 	mux := http.NewServeMux()
@@ -57,6 +59,7 @@ func InitRouting(app *app.Infra) *http.ServeMux {
 	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/categories/"), middleware.Adapt(esCategoryHttp, loggingMiddleware))
 	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/voucher/"), middleware.Adapt(esVoucherHttp, loggingMiddleware, authMiddleware))
 	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/merchant/"), middleware.Adapt(esMerchantHttp, loggingMiddleware))
+	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/orders/"), middleware.Adapt(esOrderHttp, loggingMiddleware, authMiddleware))
 
 	return mux
 }
