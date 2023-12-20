@@ -21,7 +21,7 @@ RUN rm -rf go-swagger
 RUN CGO_CFLAGS="-D_LARGEFILE64_SOURCE" CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o /go/bin/marketplace-svc
 
 ## Distribution
-FROM harbor-pulomas.klik.doctor/base-os/alpine:latest
+FROM harbor-pulomas.klik.doctor/base-os/ubuntu:22.04
 
 ENV KD_ENV=stg
 ENV TZ="Asia/Jakarta"
