@@ -13,6 +13,7 @@ go-test:
     - echo "machine gitlab.klik.doctor login $GITLAB_USER password $GITLAB_PASSWORD" > /root/.netrc
     - chmod 600 /root/.netrc
     - export GOPRIVATE=gitlab.klik.doctor
+    - export CGO_CFLAGS="-D_LARGEFILE64_SOURCE"
     - apk --no-cache add make git gcc libtool musl-dev ca-certificates dumb-init
     - go test -v ./...
 
