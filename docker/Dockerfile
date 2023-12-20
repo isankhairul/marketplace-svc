@@ -6,7 +6,7 @@ COPY . .
 RUN cp .netrc /root
 RUN chmod 600 /root/.netrc
 
-RUN CGO_CFLAGS="-D_LARGEFILE64_SOURCE" CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o /go/bin/klikmedis-svc
+RUN CGO_CFLAGS="-D_LARGEFILE64_SOURCE" CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o /go/bin/marketplace-svc
 
 ## Distribution
 FROM harbor-pulomas.klik.doctor/base-os/alpine:latest
@@ -23,6 +23,6 @@ COPY --from=builder /go/bin /go/bin
 
 EXPOSE 5600
 
-RUN chmod +x /go/bin/klikmedis-svc
+RUN chmod +x /go/bin/marketplace-svc
 
-CMD ["/go/bin/klikmedis-svc"]
+CMD ["/go/bin/marketplace-svc"]
