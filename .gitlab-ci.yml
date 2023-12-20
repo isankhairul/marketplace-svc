@@ -8,7 +8,7 @@ stages:
 go-test:
   stage: testing
   image:
-    name: golang:1.19-alpine
+    name: $CI_REGISTRY/base-os/golang:1.19-alpine
   script:
     - echo "machine gitlab.klik.doctor login $GITLAB_USER password $GITLAB_PASSWORD" > /root/.netrc
     - chmod 600 /root/.netrc
@@ -22,7 +22,7 @@ go-test:
 sonarqube-check:
   stage: scanning
   image:
-    name: sonarsource/sonar-scanner-cli:latest
+    name: $CI_REGISTRY/base-os/sonarsource/sonar-scanner-cli:latest
     entrypoint: [""]
   variables:
     SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
@@ -41,7 +41,7 @@ sonarqube-check:
 build-release:
   stage: build-release
   image:
-    name: gcr.io/kaniko-project/executor:debug
+    name: $CI_REGISTRY/base-os/gcr.io/kaniko-project/executor:debug
     entrypoint: ['']
   script:
     - echo "machine gitlab.klik.doctor login $GITLAB_USER password $GITLAB_PASSWORD" > ${CI_PROJECT_DIR}/.netrc
@@ -59,7 +59,7 @@ build-release:
 build-prod:
   stage: build-prod
   image:
-    name: gcr.io/go-containerregistry/crane:debug
+    name: $CI_REGISTRY/base-os/gcr.io/go-containerregistry/crane:debug
     entrypoint: ['']
   script:
     - echo $CI_COMMIT_TAG
@@ -73,7 +73,7 @@ build-prod:
 
 release_job:
   stage: release-job
-  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  image: $CI_REGISTRY/base-os/registry.gitlab.com/gitlab-org/release-cli:latest
   rules:
     - if: $CI_COMMIT_TAG
       when: never
