@@ -73,6 +73,7 @@ elastic:
     index-districts : staging-districts
     index-subdistricts : staging-subdistricts
     index-postalcodes : staging-postalcodes
+    index-products : staging-product_flat_1
 
 security:
   jwt:

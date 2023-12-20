@@ -1,25 +1,34 @@
 package elasticservice
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/alitto/pond"
-	"github.com/pkg/errors"
-	"gitlab.klik.doctor/platform/go-pkg/dapr/logger"
+	"marketplace-svc/app/model/base"
 	modelelastic "marketplace-svc/app/model/elastic"
+	requestelastic "marketplace-svc/app/model/request/elastic"
+	responseelastic "marketplace-svc/app/model/response/elastic"
 	"marketplace-svc/app/repository"
+	"marketplace-svc/helper/config"
 	"marketplace-svc/helper/elastic"
+	"marketplace-svc/helper/message"
+	"marketplace-svc/pkg/util"
 	"math"
 	"strconv"
 	"time"
+
+	"github.com/alitto/pond"
+	"github.com/pkg/errors"
+	"gitlab.klik.doctor/platform/go-pkg/dapr/logger"
 )
 
 type ElasticProductService interface {
 	Reindex(index string, productIDs string, storeID int, productType string, merchantID int, flush bool) error
-	//Search(ctx context.Context, input requestelastic.BannerRequest) ([]map[string]interface{}, base.Pagination, message.Message, error)
+	Search(ctx context.Context, input requestelastic.ProductRequest) ([]responseelastic.ProductResponse, base.Pagination, message.Message, error)
 }
 
 type elasticProductServiceImpl struct {
+	config          config.Config
 	logger          logger.Logger
 	baseRepo        repository.BaseRepository
 	productFlatRepo repository.ProductFlatRepository
@@ -27,12 +36,13 @@ type elasticProductServiceImpl struct {
 }
 
 func NewElasticProductService(
+	config config.Config,
 	lg logger.Logger,
 	br repository.BaseRepository,
 	pfr repository.ProductFlatRepository,
 	esc elastic.ElasticClient,
 ) ElasticProductService {
-	return &elasticProductServiceImpl{lg, br, pfr, esc}
+	return &elasticProductServiceImpl{config, lg, br, pfr, esc}
 }
 
 func (s elasticProductServiceImpl) Reindex(index string, productIDs string, storeID int, productType string, merchantID int, flush bool) error {
@@ -160,4 +170,177 @@ func (s elasticProductServiceImpl) getMerchants(item map[string]interface{}) mod
 	result.SpecialPrices = sp
 
 	return result
+}
+
+// swagger:operation GET /es/products Products ProductRequest
+// Product - List
+//
+// ---
+// tags:
+//   - "Elastic - Products"
+//
+// security:
+// - Bearer: []
+// responses:
+//
+//	  '200':
+//		   description: Product - List success response
+//		   schema:
+//		       properties:
+//		           meta:
+//		               $ref: '#/definitions/MetaResponse'
+//		           data:
+//		               type: object
+//		               properties:
+//		                   records:
+//		                       type: array
+//		                       items:
+//		                           $ref: '#/definitions/ProductResponse'
+func (s elasticProductServiceImpl) Search(_ context.Context, input requestelastic.ProductRequest) ([]responseelastic.ProductResponse, base.Pagination, message.Message, error) {
+	var productResponse []map[string]interface{}
+	var newProductResponse []responseelastic.ProductResponse
+	var pagination base.Pagination
+	msg := message.SuccessMsg
+
+	indexName, err := s.getIndexName()
+	if err != nil {
+		return newProductResponse, pagination, message.ErrNoIndexName, err
+	}
+
+	params := s.buildQuerySearch(input)
+	resp, err := s.elasticClient.Search(context.Background(), indexName, params)
+	if err != nil {
+		s.logger.Error(errors.New("error request elastic: " + err.Error()))
+		return newProductResponse, pagination, message.ErrES, err
+	}
+
+	// requested fields
+	arrFields := s.defaultFields()
+	if input.Fields != "" {
+		fields := util.StringExplode(input.Fields, ",")
+		arrFields = append(arrFields, fields...)
+	}
+
+	var responseElastic responseelastic.SearchResponse
+	_ = json.NewDecoder(resp.Body).Decode(&responseElastic)
+	productResponse = s.transformSearch(responseElastic, arrFields)
+	newProductResponse = s.transformResponse(productResponse)
+	pagination = s.elasticClient.Pagination(responseElastic, input.Page, input.Limit)
+
+	return newProductResponse, pagination, msg, nil
+}
+
+func (s elasticProductServiceImpl) getIndexName() (string, error) {
+	indexName := s.config.Elastic.Index["index-products"]
+	if indexName == nil {
+		return "", errors.New("config index-products not defined")
+	}
+
+	return fmt.Sprint(indexName), nil
+}
+
+func (s elasticProductServiceImpl) buildQuerySearch(input requestelastic.ProductRequest) map[string]interface{} {
+	queryArray := map[string]interface{}{}
+
+	// create query bool
+	if input.Query != "" {
+		queryArray["bool"] = map[string]interface{}{
+			"must": map[string]interface{}{
+				"multi_match": map[string]interface{}{
+					"query":  input.Query,
+					"fields": []string{"title"},
+				},
+			},
+		}
+	} else {
+		queryArray["bool"] = map[string]interface{}{
+			"must": map[string]interface{}{
+				"match_all": map[string]interface{}{},
+			},
+		}
+	}
+
+	// default filter status
+	filters := []map[string]interface{}{
+		map[string]interface{}{
+			"term": map[string]interface{}{
+				"is_pharmacy": 1,
+			},
+		},
+	}
+
+	// filter
+	if input.CategorySlug != "" {
+		filterCategorySlug := map[string]interface{}{
+			"term": map[string]interface{}{
+				"category_slug": input.CategorySlug,
+			},
+		}
+		filters = append(filters, filterCategorySlug)
+	}
+
+	queryArray["bool"].(map[string]interface{})["filter"] = filters
+	querySort := map[string]string{"created_at": "desc"}
+
+	// pagination
+	from := (input.Page - 1) * input.Limit
+
+	params := map[string]interface{}{
+		"query": queryArray,
+		"from":  from,
+		"size":  input.Limit,
+		"sort":  querySort,
+	}
+
+	return params
+}
+
+func (s elasticProductServiceImpl) defaultFields() []string {
+	return []string{
+		"sku",
+		"name",
+		"uom",
+		"uom_name",
+		"weight",
+		"description",
+		"short_description",
+		"images",
+		"principal_name",
+		"price",
+		"min_price",
+		"max_price",
+		"proportional",
+		"pharmacy_code",
+	}
+}
+
+func (s elasticProductServiceImpl) transformResponse(response []map[string]interface{}) []responseelastic.ProductResponse {
+	resp := []responseelastic.ProductResponse{}
+	for _, val := range response {
+		data := responseelastic.NewProductResponse(val)
+		resp = append(resp, *data)
+	}
+
+	return resp
+}
+
+func (s elasticProductServiceImpl) transformSearch(rs responseelastic.SearchResponse, fields []string) []map[string]interface{} {
+	var response []map[string]interface{}
+
+	for _, item := range rs.Hits.Hits {
+		var tmpResponse map[string]interface{}
+		jsonItem, _ := json.Marshal(item.Source)
+		_ = json.Unmarshal(jsonItem, &tmpResponse)
+
+		// selected field by request
+		tmpResponseSelected := map[string]interface{}{}
+		for _, field := range fields {
+			if value, ok := tmpResponse[field]; ok {
+				tmpResponseSelected[field] = value
+			}
+		}
+		response = append(response, tmpResponseSelected)
+	}
+
+	return response
 }
