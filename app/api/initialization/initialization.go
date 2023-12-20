@@ -1,10 +1,6 @@
 package initialization
 
 import (
-	"github.com/getsentry/sentry-go"
-	"github.com/spf13/viper"
-	"gitlab.klik.doctor/platform/go-pkg/dapr/logger"
-	"go.opentelemetry.io/otel"
 	"marketplace-svc/app"
 	"marketplace-svc/app/api/middleware"
 	"marketplace-svc/app/api/transport"
@@ -13,10 +9,15 @@ import (
 	"marketplace-svc/helper/_struct"
 	"net/http"
 
+	"github.com/getsentry/sentry-go"
+	"github.com/spf13/viper"
+	"gitlab.klik.doctor/platform/go-pkg/dapr/logger"
+	"go.opentelemetry.io/otel"
+
 	"marketplace-svc/helper/cache"
 	"marketplace-svc/helper/config"
 
-	"github.com/getsentry/sentry-go/otel"
+	sentryotel "github.com/getsentry/sentry-go/otel"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
@@ -34,6 +35,7 @@ func InitRouting(app *app.Infra) *http.ServeMux {
 	esVoucherSvc := elasticregistry.RegisterEsVoucherService(app)
 	esMerchantSvc := elasticregistry.RegisterEsMerchantService(app)
 	esOrderSvc := elasticregistry.RegisterEsOrderService(app)
+	esProductSvc := elasticregistry.RegisterEsProductService(app)
 
 	//  Transport initialization
 	swagHttp := transport.SwaggerHttpHandler(app.Config.URL) //don't delete or change this !!
@@ -45,6 +47,7 @@ func InitRouting(app *app.Infra) *http.ServeMux {
 	esVoucherHttp := transportelastic.EsVoucherHttpHandler(esVoucherSvc, app)
 	esMerchantHttp := transportelastic.EsMerchantHttpHandler(esMerchantSvc, app)
 	esOrderHttp := transportelastic.EsOrderHttpHandler(esOrderSvc, app)
+	esProductHttp := transportelastic.EsProductHttpHandler(esProductSvc, app)
 
 	// Routing path
 	mux := http.NewServeMux()
@@ -60,6 +63,7 @@ func InitRouting(app *app.Infra) *http.ServeMux {
 	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/voucher/"), middleware.Adapt(esVoucherHttp, loggingMiddleware, authMiddleware))
 	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/merchant/"), middleware.Adapt(esMerchantHttp, loggingMiddleware))
 	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/orders/"), middleware.Adapt(esOrderHttp, loggingMiddleware, authMiddleware))
+	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/products/"), middleware.Adapt(esProductHttp, loggingMiddleware))
 
 	return mux
 }

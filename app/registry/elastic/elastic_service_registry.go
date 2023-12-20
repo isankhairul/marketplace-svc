@@ -11,6 +11,7 @@ import (
 func RegisterEsProductService(app *app.Infra) elasticservice.ElasticProductService {
 	ec, _ := elastic.NewElasticClient(&app.Config.Elastic, app.Log)
 	return elasticservice.NewElasticProductService(
+		*app.Config,
 		app.Log,
 		rp.NewBaseRepository(app.DB),
 		rp.NewProductFlatRepository(app.DB),

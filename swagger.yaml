@@ -1,0 +1,175 @@
+basePath: /marketplace-svc/api/v1/
+consumes:
+    - application/json
+definitions:
+    MetaResponse:
+        properties:
+            code:
+                description: Code is the response code
+                example: 1000
+                format: int64
+                type: integer
+                x-go-name: Code
+            correlation_id:
+                description: |-
+                    CorrelationId is the response correlation_id
+                    in: string
+                type: string
+                x-go-name: CorrelationId
+            message:
+                description: Message is the response message
+                example: Success
+                type: string
+                x-go-name: Message
+            pagination:
+                $ref: '#/definitions/PaginationResponse'
+        type: object
+        x-go-package: marketplace-svc/app/model/base
+    PaginationResponse:
+        properties:
+            limit:
+                format: int64
+                type: integer
+                x-go-name: Limit
+            page:
+                format: int64
+                type: integer
+                x-go-name: Page
+            records:
+                format: int64
+                type: integer
+                x-go-name: Records
+            total_page:
+                format: int64
+                type: integer
+                x-go-name: TotalPage
+            total_records:
+                format: int64
+                type: integer
+                x-go-name: TotalRecords
+        type: object
+        x-go-name: Pagination
+        x-go-package: marketplace-svc/app/model/base
+    ProductResponse:
+        properties:
+            description:
+                type: string
+                x-go-name: Description
+            image:
+                type: string
+                x-go-name: Image
+            max_price:
+                type: string
+                x-go-name: MaxPrice
+            min_price:
+                type: string
+                x-go-name: MinPrice
+            pharmacy_code:
+                type: string
+                x-go-name: PharmacyCode
+            price:
+                type: string
+                x-go-name: Price
+            principal_name:
+                type: string
+                x-go-name: PrincipalName
+            prod_code:
+                type: string
+                x-go-name: ProdCode
+            prod_name:
+                type: string
+                x-go-name: ProdName
+            proportional:
+                type: string
+                x-go-name: Proportional
+            short_description:
+                type: string
+                x-go-name: ShortDescription
+            uom:
+                type: string
+                x-go-name: UOM
+            uom_name:
+                type: string
+                x-go-name: UOMName
+            weight:
+                type: string
+                x-go-name: Weight
+        type: object
+        x-go-package: marketplace-svc/app/model/response/elastic
+    SuccessResponse:
+        properties:
+            data:
+                $ref: '#/definitions/data'
+            errors:
+                description: |-
+                    Errors is the response message
+                    in: interface
+                x-go-name: Errors
+            meta:
+                $ref: '#/definitions/MetaResponse'
+        type: object
+        x-go-name: responseHttp
+        x-go-package: marketplace-svc/app/model/base
+    data:
+        properties:
+            record:
+                x-go-name: Record
+            records:
+                x-go-name: Records
+        type: object
+        x-go-package: marketplace-svc/app/model/base
+info:
+    title: 'Klikdokter Api:'
+    version: "0.1"
+paths:
+    /es/products:
+        get:
+            description: Product - List
+            operationId: ProductRequest
+            responses:
+                "200":
+                    description: Product - List success response
+                    schema:
+                        properties:
+                            data:
+                                properties:
+                                    records:
+                                        items:
+                                            $ref: '#/definitions/ProductResponse'
+                                        type: array
+                                type: object
+                            meta:
+                                $ref: '#/definitions/MetaResponse'
+            security:
+                - Bearer: []
+            tags:
+                - Elastic - Products
+produces:
+    - application/json
+responses:
+    ErrorResponseBody:
+        description: ""
+        schema:
+            properties:
+                data:
+                    type: object
+                    x-go-name: Data
+                errors:
+                    properties:
+                        field_name:
+                            type: string
+                            x-go-name: FieldName
+                    type: object
+                    x-go-name: Errors
+                meta:
+                    $ref: '#/definitions/MetaResponse'
+            type: object
+schemes:
+    - https
+    - http
+securityDefinitions:
+    Bearer:
+        in: header
+        name: Authorization
+        type: apiKey
+swagger: "2.0"
