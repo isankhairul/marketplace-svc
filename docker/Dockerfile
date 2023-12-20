@@ -3,6 +3,8 @@ FROM harbor-pulomas.klik.doctor/base-image/marketplace-svc:20231220-0824 AS buil
 
 WORKDIR /app
 COPY . .
+RUN cp .netrc /root
+RUN chmod 600 /root/.netrc
 
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o /go/bin/klikmedis-svc
 
