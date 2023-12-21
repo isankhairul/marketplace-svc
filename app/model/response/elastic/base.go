@@ -17,6 +17,7 @@ type SearchResponse struct {
 		MaxScore float64              `json:"max_score"`
 		Hits     []SearchResponseHits `json:"hits"`
 	} `json:"hits"`
+	Aggregations interface{} `json:"aggregations"`
 }
 
 type SearchResponseHits struct {

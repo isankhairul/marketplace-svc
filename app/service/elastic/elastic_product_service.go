@@ -22,6 +22,10 @@ import (
 	"gitlab.klik.doctor/platform/go-pkg/dapr/logger"
 )
 
+const (
+	DEFAULT_STORE_ID = 1
+)
+
 type ElasticProductService interface {
 	Reindex(index string, productIDs string, storeID int, productType string, merchantID int, flush bool) error
 	Search(ctx context.Context, input requestelastic.ProductRequest) ([]responseelastic.ProductResponse, base.Pagination, message.Message, error)
@@ -202,7 +206,12 @@ func (s elasticProductServiceImpl) Search(_ context.Context, input requestelasti
 	var pagination base.Pagination
 	msg := message.SuccessMsg
 
-	indexName, err := s.getIndexName()
+	if input.StoreID == nil {
+		storeID := DEFAULT_STORE_ID
+		input.StoreID = &storeID
+	}
+
+	indexName, err := s.getIndexName(*input.StoreID)
 	if err != nil {
 		return newProductResponse, pagination, message.ErrNoIndexName, err
 	}
@@ -223,20 +232,31 @@ func (s elasticProductServiceImpl) Search(_ context.Context, input requestelasti
 
 	var responseElastic responseelastic.SearchResponse
 	_ = json.NewDecoder(resp.Body).Decode(&responseElastic)
-	productResponse = s.transformSearch(responseElastic, arrFields)
+
+	productResponse = s.transformSearch(responseElastic, arrFields, *input.StoreID)
 	newProductResponse = s.transformResponse(productResponse)
+
 	pagination = s.elasticClient.Pagination(responseElastic, input.Page, input.Limit)
 
 	return newProductResponse, pagination, msg, nil
 }
 
-func (s elasticProductServiceImpl) getIndexName() (string, error) {
-	indexName := s.config.Elastic.Index["index-products"]
+func (s elasticProductServiceImpl) getIndexName(storeID int) (string, error) {
+	indexName := s.config.Elastic.Index["index-products-flat"]
 	if indexName == nil {
-		return "", errors.New("config index-products not defined")
+		return "", errors.New("config index-products-flat not defined")
 	}
 
-	return fmt.Sprint(indexName), nil
+	return fmt.Sprint(indexName, "_", storeID), nil
+}
+
+func (s elasticProductServiceImpl) getIndexNameMerchant(storeID int) (string, error) {
+	indexName := s.config.Elastic.Index["index-merchants-flat"]
+	if indexName == nil {
+		return "", errors.New("config index-merchants-flat not defined")
+	}
+
+	return fmt.Sprint(indexName, "_", storeID), nil
 }
 
 func (s elasticProductServiceImpl) buildQuerySearch(input requestelastic.ProductRequest) map[string]interface{} {
@@ -248,7 +268,7 @@ func (s elasticProductServiceImpl) buildQuerySearch(input requestelastic.Product
 			"must": map[string]interface{}{
 				"multi_match": map[string]interface{}{
 					"query":  input.Query,
-					"fields": []string{"title"},
+					"fields": []string{"name"},
 				},
 			},
 		}
@@ -262,21 +282,21 @@ func (s elasticProductServiceImpl) buildQuerySearch(input requestelastic.Product
 
 	// default filter status
 	filters := []map[string]interface{}{
-		map[string]interface{}{
+		{
 			"term": map[string]interface{}{
 				"is_pharmacy": 1,
 			},
 		},
-	}
-
-	// filter
-	if input.CategorySlug != "" {
-		filterCategorySlug := map[string]interface{}{
+		{
 			"term": map[string]interface{}{
-				"category_slug": input.CategorySlug,
+				"is_active": 1,
 			},
-		}
-		filters = append(filters, filterCategorySlug)
+		},
+		{
+			"term": map[string]interface{}{
+				"status": 1,
+			},
+		},
 	}
 
 	queryArray["bool"].(map[string]interface{})["filter"] = filters
@@ -295,6 +315,122 @@ func (s elasticProductServiceImpl) buildQuerySearch(input requestelastic.Product
 	return params
 }
 
+func (s elasticProductServiceImpl) buildQuerySearchMerchant(productID float64) map[string]interface{} {
+	customerGroup := s.config.Elastic.DefaultCustomerGroup
+	aggsSize := s.config.Elastic.AggsSize
+	maxLimit := s.config.Elastic.MaxLimit
+
+	params := map[string]interface{}{
+		"size": maxLimit,
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"filter": []interface{}{
+					map[string]interface{}{
+						"term": map[string]interface{}{
+							"product_id": productID,
+						},
+					},
+					map[string]interface{}{
+						"term": map[string]interface{}{
+							"is_pharmacy": 1,
+						},
+					},
+					map[string]interface{}{
+						"term": map[string]interface{}{
+							"status": 1,
+						},
+					},
+					map[string]interface{}{
+						"terms": map[string]interface{}{
+							"type_id": []int{1, 2},
+						},
+					},
+					map[string]interface{}{
+						"term": map[string]interface{}{
+							"product_status": 1,
+						},
+					},
+					map[string]interface{}{
+						"range": map[string]interface{}{
+							"stock": map[string]interface{}{
+								"gt": 0,
+							},
+						},
+					},
+					map[string]interface{}{
+						"range": map[string]interface{}{
+							"selling_price": map[string]interface{}{
+								"gt": 0,
+							},
+						},
+					},
+					map[string]interface{}{
+						"nested": map[string]interface{}{
+							"path": "special_prices",
+							"query": map[string]interface{}{
+								"bool": map[string]interface{}{
+									"must": []interface{}{
+										map[string]interface{}{
+											"term": map[string]interface{}{
+												"special_prices.customer_group_id": customerGroup,
+											},
+										},
+										map[string]interface{}{
+											"range": map[string]interface{}{
+												"special_prices.price": map[string]interface{}{
+													"gt": 0,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"aggs": map[string]interface{}{
+			"sell_prices": map[string]interface{}{
+				"min": map[string]interface{}{
+					"field": "selling_price",
+				},
+			},
+			"spec_prices": map[string]interface{}{
+				"nested": map[string]interface{}{
+					"path": "special_prices",
+				},
+				"aggs": map[string]interface{}{
+					"filtered": map[string]interface{}{
+						"filter": map[string]interface{}{
+							"term": map[string]interface{}{
+								"special_prices.customer_group_id": customerGroup,
+							},
+						},
+						"aggs": map[string]interface{}{
+							"group_by": map[string]interface{}{
+								"terms": map[string]interface{}{
+									"field": "special_prices.customer_group_id",
+									"size":  aggsSize,
+								},
+								"aggs": map[string]interface{}{
+									"min_price": map[string]interface{}{
+										"min": map[string]interface{}{
+											"field": "special_prices.price",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	return params
+}
+
 func (s elasticProductServiceImpl) defaultFields() []string {
 	return []string{
 		"sku",
@@ -302,13 +438,12 @@ func (s elasticProductServiceImpl) defaultFields() []string {
 		"uom",
 		"uom_name",
 		"weight",
-		"description",
-		"short_description",
+		// "description",
+		// "short_description",
 		"images",
-		"principal_name",
+		// "principal_name",
 		"price",
 		"min_price",
-		"max_price",
 		"proportional",
 		"pharmacy_code",
 	}
@@ -324,7 +459,7 @@ func (s elasticProductServiceImpl) transformResponse(response []map[string]inter
 	return resp
 }
 
-func (s elasticProductServiceImpl) transformSearch(rs responseelastic.SearchResponse, fields []string) []map[string]interface{} {
+func (s elasticProductServiceImpl) transformSearch(rs responseelastic.SearchResponse, fields []string, storeID int) []map[string]interface{} {
 	var response []map[string]interface{}
 
 	for _, item := range rs.Hits.Hits {
@@ -332,11 +467,58 @@ func (s elasticProductServiceImpl) transformSearch(rs responseelastic.SearchResp
 		jsonItem, _ := json.Marshal(item.Source)
 		_ = json.Unmarshal(jsonItem, &tmpResponse)
 
+		// query to merchant flag
+		indexName, err := s.getIndexNameMerchant(storeID)
+		if err != nil {
+			return response
+		}
+
+		productID := tmpResponse["id"].(float64)
+
+		params := s.buildQuerySearchMerchant(productID)
+		resp, err := s.elasticClient.Search(context.Background(), indexName, params)
+		if err != nil {
+			s.logger.Error(errors.New("error request elastic: " + err.Error()))
+			return response
+		}
+
+		var responseElastic responseelastic.SearchResponse
+		_ = json.NewDecoder(resp.Body).Decode(&responseElastic)
+
+		// sellingPrice := responseElastic.Aggregations.(map[string]interface{})["sell_prices"].(map[string]interface{})["value"].(float64)
+		// specialPrice := responseElastic.Aggregations.(map[string]interface{})["spec_prices"].(map[string]interface{})["filtered"].(map[string]interface{})["group_by"].(map[string]interface{})["buckets"].([]interface{})[0].(map[string]interface{})["min_price"].(map[string]interface{})["value"].(float64)
+		var sellingPrice float64
+		if aggs, ok := responseElastic.Aggregations.(map[string]interface{}); ok {
+			if sellPrices, ok := aggs["sell_prices"].(map[string]interface{}); ok {
+				sellingPrice = sellPrices["value"].(float64)
+			}
+		}
+
+		var specialPrice float64
+		if aggs, ok := responseElastic.Aggregations.(map[string]interface{}); ok {
+			if specPrices, ok := aggs["spec_prices"].(map[string]interface{}); ok {
+				if filtered, ok := specPrices["filtered"].(map[string]interface{}); ok {
+					if groupBy, ok := filtered["group_by"].(map[string]interface{}); ok {
+						if buckets, ok := groupBy["buckets"].([]interface{}); ok && len(buckets) > 0 {
+							if minPrice, ok := buckets[0].(map[string]interface{}); ok {
+								specialPrice = minPrice["min_price"].(map[string]interface{})["value"].(float64)
+							}
+						}
+					}
+				}
+			}
+		}
+
 		// selected field by request
 		tmpResponseSelected := map[string]interface{}{}
 		for _, field := range fields {
 			if value, ok := tmpResponse[field]; ok {
 				tmpResponseSelected[field] = value
+			}
+			if field == "price" {
+				tmpResponseSelected[field] = sellingPrice
+			} else if field == "min_price" {
+				tmpResponseSelected[field] = specialPrice
 			}
 		}
 		response = append(response, tmpResponseSelected)

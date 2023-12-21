@@ -12,14 +12,13 @@ type ProductResponse struct {
 	UOMName          string `json:"uom_name"`
 	Price            string `json:"price"`
 	MinPrice         string `json:"min_price"`
-	MaxPrice         string `json:"max_price"`
 	Weight           string `json:"weight"`
-	PrincipalName    string `json:"principal_name"`
-	Description      string `json:"description"`
-	ShortDescription string `json:"short_description"`
-	Image            string `json:"image"`
+	Image            string `json:"image,omitempty"`
 	Proportional     string `json:"proportional"`
 	PharmacyCode     string `json:"pharmacy_code"`
+	PrincipalName    string `json:"principal_name,omitempty"`
+	Description      string `json:"description,omitempty"`
+	ShortDescription string `json:"short_description,omitempty"`
 }
 
 func NewProductResponse(val map[string]interface{}) *ProductResponse {
@@ -28,15 +27,14 @@ func NewProductResponse(val map[string]interface{}) *ProductResponse {
 		ProdName:         getESStringValue(val["name"]),
 		UOM:              getESStringValue(val["uom"]),
 		UOMName:          getESStringValue(val["uom_name"]),
-		Price:            getESStringValue(val["price"]),
-		MinPrice:         getESStringValue(val["min_price"]),
-		MaxPrice:         getESStringValue(val["max_price"]),
+		Price:            getESFloat64Value(val["price"]),
+		MinPrice:         getESFloat64Value(val["min_price"]),
 		Weight:           getESFloat64Value(val["weight"]),
 		PrincipalName:    getESStringValue(val["principal_name"]),
 		Description:      getESStringValue(val["description"]),
 		ShortDescription: getESStringValue(val["short_description"]),
 		Image:            getESImagesThumbnailValues(val["images"]),
-		Proportional:     getESStringValue(val["proportional"]),
+		Proportional:     "0",
 		PharmacyCode:     getESStringValue(val["pharmacy_code"]),
 	}
 }

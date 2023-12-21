@@ -42,11 +42,15 @@ type CacheDBConfig struct {
 }
 
 type ElasticConfig struct {
-	Host     string                 `mapstructure:"host"`
-	Port     string                 `mapstructure:"port"`
-	Username string                 `mapstructure:"username"`
-	Password string                 `mapstructure:"password"`
-	Index    map[string]interface{} `mapstructure:"index"`
+	Host                 string                 `mapstructure:"host"`
+	Port                 string                 `mapstructure:"port"`
+	Username             string                 `mapstructure:"username"`
+	Password             string                 `mapstructure:"password"`
+	DefaultStoreID       int                    `mapstructure:"default-store-id"`
+	DefaultCustomerGroup int                    `mapstructure:"default-customer-group"`
+	AggsSize             int                    `mapstructure:"aggs-size"`
+	MaxLimit             int                    `mapstructure:"max-limit"`
+	Index                map[string]interface{} `mapstructure:"index"`
 }
 
 type KalcareAPI struct {
