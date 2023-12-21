@@ -9,6 +9,14 @@ ENV GOPRIVATE=gitlab.klik.doctor
 RUN apk update && apk upgrade && apk add --no-cache git gcc libc-dev make openssl  g++ libc-dev librdkafka-dev pkgconf
 
 WORKDIR /app
+RUN git clone https://github.com/edenhill/librdkafka.git
+
+WORKDIR /app/librdkafka
+RUN /app/librdkafka/configure --prefix /usr
+RUN make
+RUN make install
+
+WORKDIR /app
 COPY . .
 
 RUN cp .netrc /root
