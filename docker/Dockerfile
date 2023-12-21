@@ -16,7 +16,7 @@ RUN chmod 600 /root/.netrc
 
 RUN go get
 
-RUN rm -rf go-swagger
+# RUN rm -rf go-swagger
 
 RUN CGO_CFLAGS="-D_LARGEFILE64_SOURCE" CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o /go/bin/marketplace-svc
 
