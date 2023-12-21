@@ -27,7 +27,7 @@ RUN go get
 
 # RUN rm -rf go-swagger
 
-RUN CGO_CFLAGS="-D_LARGEFILE64_SOURCE" CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o /go/bin/marketplace-svc
+RUN CGO_CFLAGS="-D_LARGEFILE64_SOURCE" CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -tags musl -a -installsuffix cgo -o /go/bin/marketplace-svc
 
 ## Distribution
 FROM harbor-pulomas.klik.doctor/base-os/ubuntu:22.04
