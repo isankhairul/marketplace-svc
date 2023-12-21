@@ -42,7 +42,8 @@ stages:
 build-release:
   stage: build-release
   image:
-    name: $CI_REGISTRY/base-os/gcr.io/kaniko-project/executor:debug
+    # name: $CI_REGISTRY/base-os/gcr.io/kaniko-project/executor:debug
+    name: gcr.io/kaniko-project/executor:debug
     entrypoint: ['']
   script:
     - echo "machine gitlab.klik.doctor login $GITLAB_USER password $GITLAB_PASSWORD" > ${CI_PROJECT_DIR}/.netrc
