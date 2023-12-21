@@ -1,8 +1,8 @@
 ## Builder
 # FROM harbor-pulomas.klik.doctor/base-image/marketplace-svc:20231220-0824 AS builder
 ## Builder
-# FROM harbor-pulomas.klik.doctor/base-os/golang:1.21.1-alpine3.18 AS builder
-FROM golang:1.21.1-alpine3.18 AS builder
+FROM harbor-pulomas.klik.doctor/base-os/golang:1.21.1-alpine AS builder
+#FROM golang:1.21.1-alpine3.18 AS builder
 ENV GO111MODULE=on
 ENV GOPRIVATE=gitlab.klik.doctor
 
@@ -30,7 +30,7 @@ RUN go get
 RUN CGO_CFLAGS="-D_LARGEFILE64_SOURCE" CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -tags musl -a -installsuffix cgo -o /go/bin/marketplace-svc
 
 ## Distribution
-FROM harbor-pulomas.klik.doctor/base-os/ubuntu:22.04
+FROM harbor-pulomas.klik.doctor/base-os/alpine:latest
 
 ENV KD_ENV=stg
 ENV TZ="Asia/Jakarta"
