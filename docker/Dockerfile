@@ -1,7 +1,7 @@
 ## Builder
 # FROM harbor-pulomas.klik.doctor/base-image/marketplace-svc:20231220-0824 AS builder
 ## Builder
-FROM harbor-pulomas.klik.doctor/base-os/golang:1.21.1-alpine
+FROM harbor-pulomas.klik.doctor/base-os/golang:1.21.1-alpine AS builder
 
 ENV GO111MODULE=on
 ENV GOPRIVATE=gitlab.klik.doctor
