@@ -7,7 +7,6 @@ import (
 	"marketplace-svc/app/model/base/encoder"
 	requestelastic "marketplace-svc/app/model/request/elastic"
 	elasticservice "marketplace-svc/app/service/elastic"
-	"marketplace-svc/helper/_struct"
 	"marketplace-svc/helper/logger"
 	"net/http"
 
@@ -27,7 +26,7 @@ func EsProductHttpHandler(s elasticservice.ElasticProductService, app *app.Infra
 		httpTransport.ServerBefore(jwt.HTTPToContext(), logger.TraceIdentifier()),
 	}
 
-	pr.Methods(http.MethodGet).Path(app.URLWithPrefix(_struct.PrefixES + "/products/")).Handler(httpTransport.NewServer(
+	pr.Methods(http.MethodGet).Path(app.URLWithPrefix("products/")).Handler(httpTransport.NewServer(
 		ep.Search,
 		decodeRequestESProduct,
 		encoder.EncodeResponseHTTP,

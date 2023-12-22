@@ -5,12 +5,20 @@ import (
 	"marketplace-svc/app/model/base"
 )
 
+// swagger:parameters ProductRequest
 type ProductRequest struct {
-	Query   string `json:"q" schema:"q" binding:"omitempty"`
-	Fields  string `json:"fields" schema:"fields" binding:"omitempty"`
-	StoreID *int   `json:"store_id" schema:"store_id" binding:"omitempty"`
-	Page    int    `json:"page" schema:"page" binding:"omitempty"`
-	Limit   int    `json:"limit" schema:"limit" binding:"omitempty"`
+	//Global Search
+	// in: query
+	Query string `json:"q" schema:"q" binding:"omitempty"`
+	// Additional Fields
+	// Example: "description,short_description"
+	Fields string `json:"fields" schema:"fields" binding:"omitempty"`
+	// StoreID
+	StoreID *int `json:"store_id" schema:"store_id" binding:"omitempty"`
+	// Page number
+	Page int `json:"page" schema:"page" binding:"omitempty"`
+	// Maximum records per page
+	Limit int `json:"limit" schema:"limit" binding:"omitempty"`
 }
 
 func (b ProductRequest) ToString() string {

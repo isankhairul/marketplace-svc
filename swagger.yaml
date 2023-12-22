@@ -58,9 +58,6 @@ definitions:
             image:
                 type: string
                 x-go-name: Image
-            max_price:
-                type: string
-                x-go-name: MaxPrice
             min_price:
                 type: string
                 x-go-name: MinPrice
@@ -122,10 +119,40 @@ info:
     title: 'Klikdokter Api:'
     version: "0.1"
 paths:
-    /es/products:
+    /products:
         get:
             description: Product - List
             operationId: ProductRequest
+            parameters:
+                - description: Global Search
+                  in: query
+                  name: q
+                  type: string
+                  x-go-name: Query
+                - description: Additional Fields
+                  example: '"description,short_description"'
+                  in: query
+                  name: fields
+                  type: string
+                  x-go-name: Fields
+                - description: StoreID
+                  format: int64
+                  in: query
+                  name: store_id
+                  type: integer
+                  x-go-name: StoreID
+                - description: Page number
+                  format: int64
+                  in: query
+                  name: page
+                  type: integer
+                  x-go-name: Page
+                - description: Maximum records per page
+                  format: int64
+                  in: query
+                  name: limit
+                  type: integer
+                  x-go-name: Limit
             responses:
                 "200":
                     description: Product - List success response
@@ -143,7 +170,7 @@ paths:
             security:
                 - Bearer: []
             tags:
-                - Elastic - Products
+                - Products
 produces:
     - application/json
 responses:

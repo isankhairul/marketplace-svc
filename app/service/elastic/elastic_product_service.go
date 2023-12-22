@@ -22,10 +22,6 @@ import (
 	"gitlab.klik.doctor/platform/go-pkg/dapr/logger"
 )
 
-const (
-	DEFAULT_STORE_ID = 1
-)
-
 type ElasticProductService interface {
 	Reindex(index string, productIDs string, storeID int, productType string, merchantID int, flush bool) error
 	Search(ctx context.Context, input requestelastic.ProductRequest) ([]responseelastic.ProductResponse, base.Pagination, message.Message, error)
@@ -176,12 +172,12 @@ func (s elasticProductServiceImpl) getMerchants(item map[string]interface{}) mod
 	return result
 }
 
-// swagger:operation GET /es/products Products ProductRequest
+// swagger:operation GET /products Products ProductRequest
 // Product - List
 //
 // ---
 // tags:
-//   - "Elastic - Products"
+//   - "Products"
 //
 // security:
 // - Bearer: []
@@ -207,7 +203,7 @@ func (s elasticProductServiceImpl) Search(_ context.Context, input requestelasti
 	msg := message.SuccessMsg
 
 	if input.StoreID == nil {
-		storeID := DEFAULT_STORE_ID
+		storeID := s.config.Elastic.DefaultStoreID
 		input.StoreID = &storeID
 	}
 
