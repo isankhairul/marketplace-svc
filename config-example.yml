@@ -43,6 +43,10 @@ elastic:
   host: http://elasticsearch-marketplace.klikdokter-stg.int:9200
   username: marketplace_api
   password: ooh9enoy4tieJaiz1Fei
+  default-store-id: 1
+  default-customer-group: 4
+  aggs-size: 11000
+  max-limit: 6000
   index:
     index-product-autocomplete : product
     index-merchant : merchant
@@ -73,7 +77,8 @@ elastic:
     index-districts : staging-districts
     index-subdistricts : staging-subdistricts
     index-postalcodes : staging-postalcodes
-    index-products : staging-product_flat_1
+    index-products-flat : staging-product_flat
+    index-merchants-flat : staging-merchant_flat
 
 security:
   jwt:
