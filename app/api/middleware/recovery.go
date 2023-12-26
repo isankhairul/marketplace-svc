@@ -32,5 +32,5 @@ func ServeHTTP(h http.Handler, lg logger.Logger) http.Handler {
 			}
 		}()
 		h.ServeHTTP(w, req)
-	}), "Klikmedis-Service")
+	}), "Marketplace-Service")
 }

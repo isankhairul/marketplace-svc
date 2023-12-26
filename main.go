@@ -1,7 +1,7 @@
-//	 Klikdokter Api:
+//	 Marketplace Service:
 //	  version: 0.1
-//	  title: Klikdokter Api
-//	 Schemes: https, http
+//	  title: Marketplace Service API
+//	 Schemes: https
 //	 Host:
 //	 BasePath: /marketplace-svc/api/v1/
 //		Consumes:
@@ -20,7 +20,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/spf13/viper"
 	"marketplace-svc/app"
 	"marketplace-svc/app/api/initialization"
 	"marketplace-svc/app/api/middleware"
@@ -31,8 +30,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/spf13/viper"
+
 	_ "github.com/lib/pq"
 	_ "github.com/spf13/viper/remote"
+
+	"github.com/gorilla/handlers"
 )
 
 func main() {
@@ -59,10 +62,15 @@ func main() {
 
 	// Routing initialization
 	mux := initialization.InitRouting(infra)
+	// Wrap the entire router with gzip compression middleware
+	handler := handlers.CompressHandler(mux)
+	// Wrap with additional middleware if needed
+	finalHandler := middleware.ServeHTTP(handler, infra.Log)
+
 	address := flag.String("listen", ":"+strconv.Itoa(cfg.Server.Port), "Listen address.")
 	httpServer := http.Server{
 		Addr:    *address,
-		Handler: middleware.ServeHTTP(mux, infra.Log),
+		Handler: finalHandler,
 	}
 
 	// Setup graceful shutdown

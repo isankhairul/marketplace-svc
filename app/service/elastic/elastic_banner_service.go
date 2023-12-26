@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"gitlab.klik.doctor/platform/go-pkg/dapr/logger"
 	"marketplace-svc/app/model/base"
 	requestelastic "marketplace-svc/app/model/request/elastic"
 	responseelastic "marketplace-svc/app/model/response/elastic"
@@ -14,6 +13,8 @@ import (
 	"marketplace-svc/helper/elastic"
 	"marketplace-svc/helper/message"
 	"marketplace-svc/pkg/util"
+
+	"gitlab.klik.doctor/platform/go-pkg/dapr/logger"
 )
 
 type ElasticBannerService interface {
@@ -83,10 +84,13 @@ func (s elasticBannerServiceImpl) buildQuerySearch(input requestelastic.BannerRe
 	// create query bool
 	if input.Query != "" {
 		queryArray["bool"] = map[string]interface{}{
-			"must": map[string]interface{}{
-				"multi_match": map[string]interface{}{
-					"query":  input.Query,
-					"fields": []string{"title"},
+			"must": []interface{}{
+				map[string]interface{}{
+					"match_phrase": map[string]interface{}{
+						"title": map[string]interface{}{
+							"query": input.Query,
+						},
+					},
 				},
 			},
 		}
@@ -100,7 +104,7 @@ func (s elasticBannerServiceImpl) buildQuerySearch(input requestelastic.BannerRe
 
 	// default filter status
 	filters := []map[string]interface{}{
-		map[string]interface{}{
+		{
 			"term": map[string]interface{}{
 				"status": 1,
 			},

@@ -193,7 +193,6 @@ responses:
             type: object
 schemes:
     - https
-    - http
 securityDefinitions:
     Bearer:
         in: header

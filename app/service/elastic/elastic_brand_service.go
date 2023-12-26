@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"gitlab.klik.doctor/platform/go-pkg/dapr/logger"
 	"marketplace-svc/app/model/base"
 	requestelastic "marketplace-svc/app/model/request/elastic"
 	responseelastic "marketplace-svc/app/model/response/elastic"
@@ -15,6 +14,8 @@ import (
 	"marketplace-svc/helper/message"
 	"marketplace-svc/pkg/util"
 	"strings"
+
+	"gitlab.klik.doctor/platform/go-pkg/dapr/logger"
 )
 
 type ElasticBrandService interface {
@@ -98,7 +99,7 @@ func (s elasticBrandServiceImpl) buildQuerySearch(input requestelastic.BrandRequ
 
 	// default filter status
 	filters := []map[string]interface{}{
-		map[string]interface{}{
+		{
 			"term": map[string]interface{}{
 				"status": 1,
 			},

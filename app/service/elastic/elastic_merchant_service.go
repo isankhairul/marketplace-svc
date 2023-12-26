@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"gitlab.klik.doctor/platform/go-pkg/dapr/logger"
 	"marketplace-svc/app/model/base"
 	requestelastic "marketplace-svc/app/model/request/elastic"
 	responseelastic "marketplace-svc/app/model/response/elastic"
@@ -15,6 +14,8 @@ import (
 	"marketplace-svc/helper/message"
 	"marketplace-svc/pkg/util"
 	"strings"
+
+	"gitlab.klik.doctor/platform/go-pkg/dapr/logger"
 )
 
 type ElasticMerchantService interface {
@@ -171,13 +172,10 @@ func (s elasticMerchantServiceImpl) buildQuerySearch(input requestelastic.Mercha
 		switch input.Sort {
 		case "name":
 			fieldSort = "name.raw"
-			break
 		case "rating":
 			fieldSort = "rating"
-			break
 		case "relevance":
 			fieldSort = "_score"
-			break
 		}
 	}
 	querySort := map[string]string{fieldSort: directionSort}
@@ -271,15 +269,6 @@ func (s elasticMerchantServiceImpl) Detail(_ context.Context, input requestelast
 		},
 	}
 
-	filters := []map[string]interface{}{}
-	if input.StoreID != 0 {
-		filters = append(filters, map[string]interface{}{
-			"term": map[string]int{
-				"merchant_store.id": input.StoreID,
-			},
-		})
-	}
-
 	params := map[string]interface{}{
 		"query": queryArray,
 		"size":  1,
@@ -346,13 +335,6 @@ func (s elasticMerchantServiceImpl) SearchByZipcode(ctx context.Context, input r
 	if err != nil {
 		s.logger.Error(errors.New("error request elastic: " + err.Error()))
 		return merchantResponse, pagination, message.ErrES, err
-	}
-
-	// requested fields
-	arrFields := s.defaultFields()
-	if input.Fields != "" {
-		fields := util.StringExplode(input.Fields, ",")
-		arrFields = append(arrFields, fields...)
 	}
 
 	var responseElastic responseelastic.SearchResponse

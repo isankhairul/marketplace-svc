@@ -257,14 +257,16 @@ func (s elasticProductServiceImpl) getIndexNameMerchant(storeID int) (string, er
 
 func (s elasticProductServiceImpl) buildQuerySearch(input requestelastic.ProductRequest) map[string]interface{} {
 	queryArray := map[string]interface{}{}
-
 	// create query bool
 	if input.Query != "" {
 		queryArray["bool"] = map[string]interface{}{
-			"must": map[string]interface{}{
-				"multi_match": map[string]interface{}{
-					"query":  input.Query,
-					"fields": []string{"name"},
+			"must": []interface{}{
+				map[string]interface{}{
+					"match_phrase_prefix": map[string]interface{}{
+						"completion_terms": map[string]interface{}{
+							"query": input.Query,
+						},
+					},
 				},
 			},
 		}
@@ -434,10 +436,7 @@ func (s elasticProductServiceImpl) defaultFields() []string {
 		"uom",
 		"uom_name",
 		"weight",
-		// "description",
-		// "short_description",
 		"images",
-		// "principal_name",
 		"price",
 		"min_price",
 		"proportional",
@@ -481,8 +480,6 @@ func (s elasticProductServiceImpl) transformSearch(rs responseelastic.SearchResp
 		var responseElastic responseelastic.SearchResponse
 		_ = json.NewDecoder(resp.Body).Decode(&responseElastic)
 
-		// sellingPrice := responseElastic.Aggregations.(map[string]interface{})["sell_prices"].(map[string]interface{})["value"].(float64)
-		// specialPrice := responseElastic.Aggregations.(map[string]interface{})["spec_prices"].(map[string]interface{})["filtered"].(map[string]interface{})["group_by"].(map[string]interface{})["buckets"].([]interface{})[0].(map[string]interface{})["min_price"].(map[string]interface{})["value"].(float64)
 		var sellingPrice float64
 		if aggs, ok := responseElastic.Aggregations.(map[string]interface{}); ok {
 			if sellPrices, ok := aggs["sell_prices"].(map[string]interface{}); ok {
