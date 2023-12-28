@@ -1,6 +1,7 @@
 package requestelastic
 
 import (
+	"encoding/json"
 	"fmt"
 	"marketplace-svc/app/model/base"
 )
@@ -19,6 +20,11 @@ type ProductRequest struct {
 	Page int `json:"page" schema:"page" binding:"omitempty"`
 	// Maximum records per page
 	Limit int `json:"limit" schema:"limit" binding:"omitempty"`
+	// JSON value for filtering. The format is {"field_name": "filter_keyword", ...}
+	// Example {"name":"Dr Ican","str_no":"XXXX-XXXX"]}
+	Filter string `schema:"filter"`
+	// swagger:ignore
+	ParsedFilter ProductFilter `schema:"-"`
 }
 
 func (b ProductRequest) ToString() string {
@@ -39,4 +45,22 @@ func (req ProductRequest) DefaultPagination() ProductRequest {
 		req.Page = 1
 	}
 	return req
+}
+
+type ProductFilter struct {
+	ProdCode []string `json:"prod_code"`
+}
+
+func (req *ProductRequest) ParseFilterAndSetDefault() error {
+
+	var filter ProductFilter
+	if req.Filter != "" {
+		err := json.Unmarshal([]byte(req.Filter), &filter)
+		if err != nil {
+			return err
+		}
+	}
+
+	req.ParsedFilter = filter
+	return nil
 }
