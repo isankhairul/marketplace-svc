@@ -70,6 +70,7 @@ var ErrSaveData = Message{Code: 34005, Message: "Data cannot be saved, please ch
 var ErrPageNotFound = Message{Code: 39404, Message: "Page not found"}
 var ErrReqParam = Message{Code: 4000, Message: "Invalid Request Parameter(s)"}
 var ErrNoIndexName = Message{Code: 34005, Message: "Data index-name not in config"}
+var ErrInvalidReqFilter = Message{Code: 34005, Message: "Invalid json format on 'filter' parameter"}
 
 var AuthenticationFailed = Message{Code: 34006, Message: "JWT token is invalid"}
 var UnauthorizedError = Message{Code: 34007, Message: "No authorization token was found"}

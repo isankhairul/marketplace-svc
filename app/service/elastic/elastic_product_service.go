@@ -202,6 +202,11 @@ func (s elasticProductServiceImpl) Search(_ context.Context, input requestelasti
 	var pagination base.Pagination
 	msg := message.SuccessMsg
 
+	err := input.ParseFilterAndSetDefault()
+	if err != nil {
+		return newProductResponse, pagination, message.ErrInvalidReqFilter, err
+	}
+
 	if input.StoreID == nil {
 		storeID := s.config.Elastic.DefaultStoreID
 		input.StoreID = &storeID
@@ -295,6 +300,15 @@ func (s elasticProductServiceImpl) buildQuerySearch(input requestelastic.Product
 				"status": 1,
 			},
 		},
+	}
+
+	if len(input.ParsedFilter.ProdCode) > 0 {
+		prodCodeFilter := map[string]interface{}{
+			"terms": map[string]interface{}{
+				"sku": input.ParsedFilter.ProdCode,
+			},
+		}
+		filters = append(filters, prodCodeFilter)
 	}
 
 	queryArray["bool"].(map[string]interface{})["filter"] = filters
