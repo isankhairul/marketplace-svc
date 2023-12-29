@@ -453,6 +453,9 @@ func (s elasticProductServiceImpl) defaultFields() []string {
 		"images",
 		"price",
 		"min_price",
+		"principal_name",
+		"description",
+		"short_description",
 		"proportional",
 		"pharmacy_code",
 	}
