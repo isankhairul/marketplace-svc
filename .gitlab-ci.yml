@@ -1,6 +1,7 @@
 stages:
   # - testing
   - scanning
+  - scannning-vulnerability
   - build-release
   - build-prod
   - release-job
@@ -40,7 +41,7 @@ sonarqube-check:
       when: always
 
 vulnerability-check:
-  stage: scanning
+  stage: scannning-vulnerability
   image:
     name: golang:1.21.1-alpine
   script:
