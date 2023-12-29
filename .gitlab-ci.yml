@@ -18,9 +18,8 @@ go-test:
     - export CGO_CFLAGS="-D_LARGEFILE64_SOURCE"
     - apk --no-cache add make git gcc libtool musl-dev ca-certificates dumb-init
     - go test ./app/service/test -v -coverpkg=./app/service
-
-#   rules:
-#     - if: '$CI_COMMIT_BRANCH == "release" || $CI_COMMIT_BRANCH == "develop"'
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "release" || $CI_COMMIT_BRANCH == "develop"'
 
 sonarqube-check:
   stage: scanning
