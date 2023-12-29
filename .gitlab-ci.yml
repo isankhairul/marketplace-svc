@@ -1,22 +1,23 @@
 stages:
-  # - testing
+  - testing
   - scanning
   - scannning-vulnerability
   - build-release
+  - deploy-staging
   - build-prod
   - release-job
 
-# go-test:
-#   stage: testing
-#   image:
-#     name: $CI_REGISTRY/base-os/golang:1.19-alpine
-#   script:
-#     - echo "machine gitlab.klik.doctor login $GITLAB_USER password $GITLAB_PASSWORD" > /root/.netrc
-#     - chmod 600 /root/.netrc
-#     - export GOPRIVATE=gitlab.klik.doctor
-#     - export CGO_CFLAGS="-D_LARGEFILE64_SOURCE"
-#     - apk --no-cache add make git gcc libtool musl-dev ca-certificates dumb-init
-#     - go test -v ./...
+go-test:
+  stage: testing
+  image:
+    name: $CI_REGISTRY/base-os/golang:1.21.1-alpine
+  script:
+    - echo "machine gitlab.klik.doctor login $GITLAB_USER password $GITLAB_PASSWORD" > /root/.netrc
+    - chmod 600 /root/.netrc
+    - export GOPRIVATE=gitlab.klik.doctor
+    - export CGO_CFLAGS="-D_LARGEFILE64_SOURCE"
+    - apk --no-cache add make git gcc libtool musl-dev ca-certificates dumb-init
+    - go test ./app/service/test -v -coverpkg=./app/service
 
 #   rules:
 #     - if: '$CI_COMMIT_BRANCH == "release" || $CI_COMMIT_BRANCH == "develop"'
@@ -70,6 +71,30 @@ build-release:
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'
       when: always
+
+deploy-staging:
+  stage: deploy-staging
+  image: ubuntu:22.04
+  script:
+    - apt update && apt install openssh-client git sshpass curl grep -y
+    - eval `ssh-agent -s`
+    - ssh-add <(echo "$CICD_SSH_KEY" | base64 -d)
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan gitlab.klik.doctor >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    - git config --global user.email "$CICD_EMAIL"
+    - git config --global user.name "$CICD_USERNAME"
+    - git clone git@gitlab.klik.doctor:$CI_PROJECT_ROOT_NAMESPACE/devops/staging/deploy-$CI_PROJECT_NAME.git -b master
+    - cd deploy-$CI_PROJECT_NAME
+    - export REPLACE_TAG=$(cat deployment.yml | grep "harbor-pulomas.klik.doctor" | grep -o "dev-.*");
+    - export GET_TAG=$(curl -s 'https://harbor-pulomas.klik.doctor/api/v2.0/projects/klikdokter/repositories/'$CI_PROJECT_NAME'/artifacts?page=1' -u $CI_REGISTRY_USER:$CI_REGISTRY_PASSWORD | grep -Po '(?<="name":").*?(?=",)' | head -n1);
+    - sed -i "s|$REPLACE_TAG|$GET_TAG|g" deployment.*
+    - git add . && git commit -m "Deploy $GET_TAG"
+    - git push origin master
+  allow_failure: true
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
 
 build-prod:
   stage: build-prod
