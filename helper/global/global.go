@@ -6,6 +6,7 @@ import (
 	"html"
 	"io"
 	"marketplace-svc/helper/message"
+	"math"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -170,4 +171,43 @@ func TimeAgo(t time.Time) string {
 	default:
 		return fmt.Sprintf("%d year", int(duration.Hours()/(24*365)))
 	}
+}
+
+func CalculateDistance(lat1, lon1, lat2, lon2 float64, unit string) float64 {
+	// Earth radius in kilometers by default
+	var earthRadius float64
+
+	switch unit {
+	case "km":
+		earthRadius = 6371.0
+	case "mi":
+		earthRadius = 3959.0
+	case "m":
+		earthRadius = 6371000.0
+		// 1 meter = 0.000621371 miles
+	}
+
+	// Convert latitude and longitude from degrees to radians
+	lat1Rad := toRadians(lat1)
+	lon1Rad := toRadians(lon1)
+	lat2Rad := toRadians(lat2)
+	lon2Rad := toRadians(lon2)
+
+	// Calculate differences
+	deltaLat := lat2Rad - lat1Rad
+	deltaLon := lon2Rad - lon1Rad
+
+	// Haversine formula
+	a := math.Pow(math.Sin(deltaLat/2), 2) +
+		math.Cos(lat1Rad)*math.Cos(lat2Rad)*math.Pow(math.Sin(deltaLon/2), 2)
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+
+	// Distance in the specified unit
+	distance := earthRadius * c
+
+	return distance
+}
+
+func toRadians(degrees float64) float64 {
+	return degrees * (math.Pi / 180)
 }

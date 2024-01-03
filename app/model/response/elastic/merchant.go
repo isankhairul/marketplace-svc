@@ -79,3 +79,52 @@ type MerchantOrderReview struct {
 	Num2 int `json:"2,omitempty"`
 	Num3 int `json:"3,omitempty"`
 }
+
+// swagger:model MerchantProductResponse
+type MerchantProductResponse struct {
+	Name       string                 `json:"name"`
+	Distance   float64                `json:"distance"`
+	TotalPrice float64                `json:"total_price"`
+	Shippings  []interface{}          `json:"shippings"`
+	Items      []MerchantProductItems `json:"items"`
+}
+
+// swagger:model MerchantProductItems
+type MerchantProductItems struct {
+	SKU          string  `json:"sku"`
+	QTY          int     `json:"qty"`
+	UOM          string  `json:"uom"`
+	UOMName      string  `json:"uom_name"`
+	SellingPrice float64 `json:"selling_price"`
+	SpecialPrice float64 `json:"special_price"`
+	TotalPrice   float64 `json:"total_price"`
+	Image        string  `json:"image"`
+	Status       string  `json:"status"`
+}
+
+type ProductsAvailable struct {
+	SKU          string  `json:"sku"`
+	QTY          float64 `json:"qty"`
+	UOM          string  `json:"uom"`
+	UOMName      string  `json:"uom_name"`
+	SellingPrice float64 `json:"selling_price"`
+	SpecialPrice float64 `json:"special_price"`
+	Image        string  `json:"image"`
+}
+
+type ProductsOrdered struct {
+	SKU          string  `json:"sku"`
+	QTY          int     `json:"qty"`
+	UOM          string  `json:"uom"`
+	UOMName      string  `json:"uom_name"`
+	SellingPrice float64 `json:"selling_price"`
+	SpecialPrice float64 `json:"special_price"`
+	Available    float64 `json:"status"`
+	Status       string  `json:"status"` // out of stock or not available
+	Image        string  `json:"image"`
+}
+
+type Coordinates struct {
+	Lat float64
+	Lon float64
+}

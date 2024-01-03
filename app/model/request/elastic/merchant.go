@@ -3,6 +3,7 @@ package requestelastic
 import (
 	"fmt"
 	"marketplace-svc/app/model/base"
+	"marketplace-svc/helper/global"
 )
 
 type MerchantRequest struct {
@@ -82,5 +83,52 @@ func (req MerchantZipcodeRequest) DefaultPagination() MerchantZipcodeRequest {
 		req.Page = 1
 	}
 
+	return req
+}
+
+// swagger:parameters MerchantProductRequest
+type MerchantProductRequest struct {
+	// Additional Fields
+	// Example: "description,short_description"
+	Fields string `json:"fields" schema:"fields" binding:"omitempty"`
+	// StoreID
+	StoreID *int `json:"store_id" schema:"store_id" binding:"omitempty"`
+	// Page number
+	Page int `json:"page" schema:"page" binding:"omitempty"`
+	// Maximum records per page
+	Limit int `json:"limit" schema:"limit" binding:"omitempty"`
+	// Field to be sorted
+	Sort       string              `schema:"sort"`
+	Body       BodyMerchantProduct `json:"body"`
+	JwtPayload global.JWTPayload   `json:"-"`
+	Token      string              `json:"-"`
+}
+
+type BodyMerchantProduct struct {
+	Items []BodyReceiptsItems `json:"items"`
+}
+
+type BodyReceiptsItems struct {
+	SKU string `json:"sku"`
+	QTY int    `json:"qty"`
+}
+
+func (b MerchantProductRequest) ToString() string {
+	return fmt.Sprintf("%s-%d-%d-%d", //nolint:govet
+		b.Fields, b.StoreID, b.Page, b.Limit)
+}
+
+func (req MerchantProductRequest) DefaultPagination() MerchantProductRequest {
+	if req.Limit == 0 {
+		req.Limit = base.PAGINATION_MIN_LIMIT
+	}
+	if req.Limit > base.PAGINATION_MAX_LIMIT {
+		req.Limit = base.PAGINATION_MAX_LIMIT
+	}
+
+	// Default page 1
+	if req.Page == 0 {
+		req.Page = 1
+	}
 	return req
 }
