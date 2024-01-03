@@ -51,6 +51,7 @@ vulnerability-check:
   allow_failure: true
   rules:
     - if: '$CI_COMMIT_BRANCH == "release" || $CI_COMMIT_BRANCH == "develop"'
+      when: always
 
 build-release:
   stage: build-release
@@ -94,6 +95,7 @@ deploy-staging:
   allow_failure: true
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'
+      when: always
 
 build-prod:
   stage: build-prod
