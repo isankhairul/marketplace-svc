@@ -84,7 +84,7 @@ deploy-staging:
     - chmod 644 ~/.ssh/known_hosts
     - git config --global user.email "$CICD_EMAIL"
     - git config --global user.name "$CICD_USERNAME"
-    - git clone git@gitlab.klik.doctor:$CI_PROJECT_ROOT_NAMESPACE/devops/staging/deploy-$CI_PROJECT_NAME.git -b master
+    - git clone git@gitlab.klik.doctor:klikdokter/devops/staging/deploy-$CI_PROJECT_NAME.git -b master
     - cd deploy-$CI_PROJECT_NAME
     - export REPLACE_TAG=$(cat deployment.yml | grep "harbor-pulomas.klik.doctor" | grep -o "dev-.*");
     - export GET_TAG=$(curl -s 'https://harbor-pulomas.klik.doctor/api/v2.0/projects/klikdokter/repositories/'$CI_PROJECT_NAME'/artifacts?page=1' -u $CI_REGISTRY_USER:$CI_REGISTRY_PASSWORD | grep -Po '(?<="name":").*?(?=",)' | head -n1);
