@@ -54,15 +54,16 @@ type ElasticConfig struct {
 }
 
 type KalcareAPI struct {
-	Server          string `mapstructure:"server"`
-	EndpointAuth    string `mapstructure:"endpoint-auth"`
-	EndpointQueue   string `mapstructure:"endpoint-queue"`
-	EndpointWebhook string `mapstructure:"endpoint-webhook"`
-	ClientID        string `mapstructure:"client-id"`
-	CancelHours     int    `mapstructure:"cancel-hours"`
-	CancelMinutes   int    `mapstructure:"cancel-minutes"`
-	PostInterval    int    `mapstructure:"post-interval"`
-	PostMinutes     int    `mapstructure:"post-minutes"`
+	Server               string `mapstructure:"server"`
+	EndpointAuth         string `mapstructure:"endpoint-auth"`
+	EndpointQueue        string `mapstructure:"endpoint-queue"`
+	EndpointWebhook      string `mapstructure:"endpoint-webhook"`
+	EndpointCustomerInfo string `mapstructure:"endpoint-customer-info"`
+	ClientID             string `mapstructure:"client-id"`
+	CancelHours          int    `mapstructure:"cancel-hours"`
+	CancelMinutes        int    `mapstructure:"cancel-minutes"`
+	PostInterval         int    `mapstructure:"post-interval"`
+	PostMinutes          int    `mapstructure:"post-minutes"`
 }
 
 type DBLogConfig struct {

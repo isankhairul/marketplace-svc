@@ -18,35 +18,26 @@ const (
 
 type JWTPayload struct {
 	UID            string            `json:"sub,omitempty"`
-	Phone          string            `json:"phone,omitempty"`
-	Email          string            `json:"email,omitempty"`
 	Name           string            `json:"full_name,omitempty"`
 	Groups         []string          `json:"groups,omitempty"`
 	ResourceAccess map[string]Access `json:"resource_access,omitempty"`
-	Data           UserDoctor        `json:"data,omitempty"`
+	Scope          string            `json:"scope,omitempty"`
+	SID            string            `json:"sid,omitempty"`
+	MemberID       string            `json:"member_id,omitempty"`
+	UserIDLegacy   string            `json:"user_id_legacy,omitempty"`
+	Phone          string            `json:"phone,omitempty"`
+	GroupID        int               `json:"group_id,omitempty"`
+	Topic          []int             `json:"topic,omitempty"`
+	ID             string            `json:"id,omitempty"`
+	Avatar         string            `json:"avatar,omitempty"`
+	ContactId      string            `json:"contact_id,omitempty"`
+	CustomerID     int               `json:"customer_id,omitempty"`
+	Group          string            `json:"group,omitempty"`
 	jwtgo.StandardClaims
 }
 
 type Access struct {
 	Roles []string `json:"roles"`
-}
-
-type UserDoctor struct {
-	ID        int        `json:"id,omitempty"`
-	UserID    int        `json:"user_id,omitempty"`
-	Name      string     `json:"name,omitempty"`
-	Email     string     `json:"email,omitempty"`
-	Telephone string     `json:"telephone,omitempty"`
-	Vip       bool       `json:"vip,omitempty"`
-	Apotek    string     `json:"apotek,omitempty"`
-	Hospitals []Hospital `json:"hospitals,omitempty"`
-}
-
-type Hospital struct {
-	Key             int    `json:"key,omitempty"`
-	Value           string `json:"value,omitempty"`
-	Role            string `json:"role,omitempty"`
-	InstitutionType int    `json:"institution_type,omitempty"`
 }
 
 func GetJWTInfoFromContext(ctx context.Context, cfg *config.JwtConfig) (*JWTPayload, error) {
@@ -70,10 +61,9 @@ func JWTInfoToStruct(jwtToken string) (*JWTPayload, error) {
 
 func ExtractTokenFromAuthHeader(val string) (token string, ok bool) {
 	authHeaderParts := strings.Split(val, " ")
-
-	if len(authHeaderParts) > 1 {
-		return authHeaderParts[1], true
+	if len(authHeaderParts) != 2 || !strings.EqualFold(authHeaderParts[0], bearer) {
+		return "", false
 	}
 
-	return "", false
+	return authHeaderParts[1], true
 }

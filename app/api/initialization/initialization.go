@@ -64,6 +64,7 @@ func InitRouting(app *app.Infra) *http.ServeMux {
 	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/merchant/"), middleware.Adapt(esMerchantHttp, loggingMiddleware))
 	mux.Handle(app.URLWithPrefix(_struct.PrefixES+"/orders/"), middleware.Adapt(esOrderHttp, loggingMiddleware, authMiddleware))
 	mux.Handle(app.URLWithPrefix("products/"), middleware.Adapt(esProductHttp, loggingMiddleware))
+	mux.Handle(app.URLWithPrefix("merchant-product/"), middleware.Adapt(esMerchantHttp, loggingMiddleware, authMiddleware))
 
 	return mux
 }
