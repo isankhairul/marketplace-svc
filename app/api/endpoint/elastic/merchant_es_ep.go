@@ -132,7 +132,7 @@ func makeSearchMerchantProduct(s elasticservice.ElasticMerchantService, cfg *con
 		if msg != message.SuccessMsg {
 			return base.SetErrorResponse(ctx, msg, err), nil
 		}
-		pagination := response["page"].(base.Pagination)
-		return base.SetHttpResponse(ctx, msg, response["result"], &pagination), nil
+		// pagination := response["page"].(base.Pagination)
+		return base.SetHttpResponse(ctx, msg, response["result"], nil), nil
 	}
 }
