@@ -112,7 +112,7 @@ func (s elasticMerchantServiceImpl) SearchMerchantProduct(ctx context.Context, c
 
 	newMerchantProductResponse = s.transformSearchMerchantProduct(responseElastic, productSkus, lat, lon, *input.StoreID)
 
-	pagination = s.elasticClient.Pagination(responseElastic, input.Page, input.Limit)
+	// pagination = s.elasticClient.Pagination(responseElastic, input.Page, input.Limit)
 
 	return newMerchantProductResponse, pagination, msg, nil
 
@@ -165,7 +165,7 @@ func (s elasticMerchantServiceImpl) buildQuerySearchMerchantProduct(input reques
 	}
 
 	// pagination
-	from := (input.Page - 1) * input.Limit
+	// from := (input.Page - 1) * input.Limit
 
 	params := map[string]interface{}{
 		"query": map[string]interface{}{
@@ -184,6 +184,18 @@ func (s elasticMerchantServiceImpl) buildQuerySearchMerchantProduct(input reques
 
 					return shouldClauses
 				}(),
+				"must": []map[string]interface{}{
+					{
+						"term": map[string]interface{}{
+							"is_pharmacy": 1,
+						},
+					},
+					{
+						"term": map[string]interface{}{
+							"status": 1,
+						},
+					},
+				},
 			},
 		},
 		"aggs": map[string]interface{}{
@@ -236,7 +248,7 @@ func (s elasticMerchantServiceImpl) buildQuerySearchMerchantProduct(input reques
 
 					aggs["data"] = map[string]interface{}{
 						"top_hits": map[string]interface{}{
-							"size": 2,
+							"size": len(input.Body.Items),
 						},
 					}
 
@@ -271,6 +283,8 @@ func (s elasticMerchantServiceImpl) buildQuerySearchMerchantProduct(input reques
 										},
 									},
 								},
+								"from": 0,
+								"size": input.Limit,
 							},
 						}
 					} else if orderBy == "fulfill" {
@@ -288,6 +302,8 @@ func (s elasticMerchantServiceImpl) buildQuerySearchMerchantProduct(input reques
 										},
 									},
 								},
+								"from": 0,
+								"size": input.Limit,
 							},
 						}
 					}
@@ -309,8 +325,7 @@ func (s elasticMerchantServiceImpl) buildQuerySearchMerchantProduct(input reques
 				},
 			},
 		},
-		"from": from,
-		"size": input.Limit,
+		"size": 0,
 	}
 
 	return params
@@ -567,11 +582,11 @@ func (s elasticMerchantServiceImpl) transformSearchMerchantProduct(rs responseel
 
 			for _, sku := range productSkus {
 				productSkuName := "product_" + sku["sku"].(string)
-				productAvailable := buck[productSkuName].(map[string]interface{})["value"].(float64)
+				available := buck[productSkuName].(map[string]interface{})["value"].(float64)
 				productOrdered = append(productOrdered, responseelastic.ProductsOrdered{
 					SKU:       sku["sku"].(string),
 					QTY:       sku["stock"].(int),
-					Available: productAvailable,
+					Available: available,
 				})
 			}
 
@@ -593,9 +608,9 @@ func (s elasticMerchantServiceImpl) transformSearchMerchantProduct(rs responseel
 							productSKU := value["product_sku"].(string)
 							productStock := value["stock"].(float64)
 							// add selling_price and special_price
-							price := s.GetPriceProduct(value["product_id"].(float64), storeID)
+							price := s.GetPriceProduct(productSKU, storeID)
 							// add uom and uom_name
-							productDetail := s.GetProductDetail(value["product_id"].(float64), storeID)
+							productDetail := s.GetProductDetail(productSKU, storeID)
 							productAvailable = append(productAvailable, responseelastic.ProductsAvailable{
 								SKU:          productSKU,
 								QTY:          productStock,
@@ -715,7 +730,7 @@ func (s elasticMerchantServiceImpl) transformSearchMerchantProduct(rs responseel
 	return allMerchantResponses
 }
 
-func (s elasticMerchantServiceImpl) GetProductDetail(productID float64, storeID int) map[string]interface{} {
+func (s elasticMerchantServiceImpl) GetProductDetail(productSKU string, storeID int) map[string]interface{} {
 	var response map[string]interface{}
 
 	maxLimit := s.config.Elastic.MaxLimit
@@ -727,7 +742,7 @@ func (s elasticMerchantServiceImpl) GetProductDetail(productID float64, storeID 
 				"filter": []interface{}{
 					map[string]interface{}{
 						"term": map[string]interface{}{
-							"id": productID,
+							"sku": productSKU,
 						},
 					},
 					map[string]interface{}{
@@ -774,7 +789,7 @@ func (s elasticMerchantServiceImpl) GetProductDetail(productID float64, storeID 
 	return response
 }
 
-func (s elasticMerchantServiceImpl) GetPriceProduct(productID float64, storeID int) [2]float64 {
+func (s elasticMerchantServiceImpl) GetPriceProduct(productSKU string, storeID int) [2]float64 {
 	var response [2]float64
 
 	customerGroup := s.config.Elastic.DefaultCustomerGroup
@@ -788,7 +803,7 @@ func (s elasticMerchantServiceImpl) GetPriceProduct(productID float64, storeID i
 				"filter": []interface{}{
 					map[string]interface{}{
 						"term": map[string]interface{}{
-							"product_id": productID,
+							"product_sku": productSKU,
 						},
 					},
 					map[string]interface{}{
