@@ -613,6 +613,7 @@ func (s elasticMerchantServiceImpl) transformSearchMerchantProduct(rs responseel
 							productDetail := s.GetProductDetail(productSKU, storeID)
 							productAvailable = append(productAvailable, responseelastic.ProductsAvailable{
 								SKU:          productSKU,
+								Name:         productDetail["name"].(string),
 								QTY:          productStock,
 								UOM:          productDetail["uom"].(string),
 								UOMName:      productDetail["uom_name"].(string),
@@ -637,7 +638,8 @@ func (s elasticMerchantServiceImpl) transformSearchMerchantProduct(rs responseel
 						//added selling_price and special_price in prduct_ordered
 						productOrdered[i].SellingPrice = productAvailable[j].SellingPrice
 						productOrdered[i].SpecialPrice = productAvailable[j].SpecialPrice
-						//added uom and uom_name in product_ordered
+						//added name, uom and uom_name in product_ordered
+						productOrdered[i].Name = productAvailable[j].Name
 						productOrdered[i].UOM = productAvailable[j].UOM
 						productOrdered[i].UOMName = productAvailable[j].UOMName
 						//added image in product_ordered
@@ -702,6 +704,7 @@ func (s elasticMerchantServiceImpl) transformSearchMerchantProduct(rs responseel
 					}
 					productItems = append(productItems, responseelastic.MerchantProductItems{
 						SKU:          item.SKU,
+						Name:         item.Name,
 						QTY:          item.QTY,
 						UOM:          item.UOM,
 						UOMName:      item.UOMName,
@@ -771,6 +774,7 @@ func (s elasticMerchantServiceImpl) GetProductDetail(productSKU string, storeID 
 	var responseElastic responseelastic.SearchResponse
 	_ = json.NewDecoder(resp.Body).Decode(&responseElastic)
 
+	name := responseElastic.Hits.Hits[0].Source.(map[string]interface{})["name"].(string)
 	uom := responseElastic.Hits.Hits[0].Source.(map[string]interface{})["uom"].(string)
 	uomName := responseElastic.Hits.Hits[0].Source.(map[string]interface{})["uom_name"].(string)
 	images, _ := responseElastic.Hits.Hits[0].Source.(map[string]interface{})["images"].([]interface{})
@@ -781,6 +785,7 @@ func (s elasticMerchantServiceImpl) GetProductDetail(productSKU string, storeID 
 	}
 
 	response = map[string]interface{}{
+		"name":     name,
 		"uom":      uom,
 		"uom_name": uomName,
 		"image":    thumbnailURL,

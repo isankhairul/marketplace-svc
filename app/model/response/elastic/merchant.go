@@ -92,6 +92,7 @@ type MerchantProductResponse struct {
 // swagger:model MerchantProductItems
 type MerchantProductItems struct {
 	SKU          string  `json:"sku"`
+	Name         string  `json:"name"`
 	QTY          int     `json:"qty"`
 	UOM          string  `json:"uom"`
 	UOMName      string  `json:"uom_name"`
@@ -104,6 +105,7 @@ type MerchantProductItems struct {
 
 type ProductsAvailable struct {
 	SKU          string  `json:"sku"`
+	Name         string  `json:"name"`
 	QTY          float64 `json:"qty"`
 	UOM          string  `json:"uom"`
 	UOMName      string  `json:"uom_name"`
@@ -114,6 +116,7 @@ type ProductsAvailable struct {
 
 type ProductsOrdered struct {
 	SKU          string  `json:"sku"`
+	Name         string  `json:"name"`
 	QTY          int     `json:"qty"`
 	UOM          string  `json:"uom"`
 	UOMName      string  `json:"uom_name"`
