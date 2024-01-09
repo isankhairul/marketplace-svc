@@ -82,6 +82,7 @@ type MerchantOrderReview struct {
 
 // swagger:model MerchantProductResponse
 type MerchantProductResponse struct {
+	UID        string                 `json:"uid"`
 	Name       string                 `json:"name"`
 	Distance   float64                `json:"distance"`
 	TotalPrice float64                `json:"total_price"`

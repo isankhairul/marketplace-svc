@@ -1318,6 +1318,8 @@ github.com/imdario/mergo v0.3.12/go.mod h1:jmQim1M+e3UYxmgPu/WyfjB3N3VflVyUjjjwH
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
 github.com/intel/goresctrl v0.2.0/go.mod h1:+CZdzouYFn5EsxgqAQTEzMfwKwuc0fVdMrT9FCCAVRQ=
 github.com/invopop/jsonschema v0.7.0/go.mod h1:O9uiLokuu0+MGFlyiaqtWxwqJm41/+8Nj0lD7A36YH0=
+github.com/itgelo/ozzo-validation v1.0.0 h1:rCrNcieXALtu5fYO4yvYqQOZN8lSOsHaCgOWnkPif3w=
+github.com/itgelo/ozzo-validation v1.0.0/go.mod h1:MBOSyB/babp3ugF74lyciQRPLKM2ocfNvNYtyQSVIfA=
 github.com/itgelo/ozzo-validation/v4 v4.3.1 h1:wDww+RPUrMefafGVa2kw+QcSANXN5kWZKQ4GnnYnO2M=
 github.com/itgelo/ozzo-validation/v4 v4.3.1/go.mod h1:rb7c6AYeiQ8XZPaxxK6T28q6RtevYEFhNMK8l05cBKM=
 github.com/j-keck/arping v0.0.0-20160618110441-2cf9dc699c56/go.mod h1:ymszkNOg6tORTn+6F6j+Jc8TOr5osrynvN6ivFWZ2GA=

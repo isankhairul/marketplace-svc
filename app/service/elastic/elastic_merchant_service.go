@@ -53,6 +53,11 @@ func (s elasticMerchantServiceImpl) SearchMerchantProduct(ctx context.Context, c
 	var pagination base.Pagination
 	msg := message.SuccessMsg
 
+	// validate payload
+	if err := input.Validate(); err != nil {
+		return newMerchantProductResponse, pagination, message.ErrInvalidReqBody, err
+	}
+
 	if input.StoreID == nil {
 		storeID := s.config.Elastic.DefaultStoreID
 		input.StoreID = &storeID
@@ -668,6 +673,7 @@ func (s elasticMerchantServiceImpl) transformSearchMerchantProduct(rs responseel
 			var responseElastic responseelastic.SearchResponse
 			_ = json.NewDecoder(resp.Body).Decode(&responseElastic)
 
+			merchantUID := responseElastic.Hits.Hits[0].Source.(map[string]interface{})["uid"]
 			merchantName := responseElastic.Hits.Hits[0].Source.(map[string]interface{})["name"]
 			lat2, _ := strconv.ParseFloat(responseElastic.Hits.Hits[0].Source.(map[string]interface{})["location"].(map[string]interface{})["lat"].(string), 64)
 			lon2, _ := strconv.ParseFloat(responseElastic.Hits.Hits[0].Source.(map[string]interface{})["location"].(map[string]interface{})["lon"].(string), 64)
@@ -682,6 +688,7 @@ func (s elasticMerchantServiceImpl) transformSearchMerchantProduct(rs responseel
 			coordinates2 := responseelastic.Coordinates{Lat: lat2, Lon: lon2}
 
 			response2 = map[string]interface{}{
+				"merchant_uid":       merchantUID,
 				"merchant_name":      merchantName,
 				"distance":           distance,
 				"distance2":          global.CalculateDistance(coordinates1.Lat, coordinates1.Lon, coordinates2.Lat, coordinates2.Lon, "km"),
@@ -717,6 +724,7 @@ func (s elasticMerchantServiceImpl) transformSearchMerchantProduct(rs responseel
 			}
 
 			response := responseelastic.MerchantProductResponse{
+				UID:        merchantUID.(string),
 				Name:       merchantName.(string),
 				Distance:   distance,
 				Items:      productItems,
