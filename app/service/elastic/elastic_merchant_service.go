@@ -10,7 +10,6 @@ import (
 	requestelastic "marketplace-svc/app/model/request/elastic"
 	responseelastic "marketplace-svc/app/model/response/elastic"
 	"marketplace-svc/app/repository"
-	"marketplace-svc/helper/communicates"
 	"marketplace-svc/helper/config"
 	"marketplace-svc/helper/elastic"
 	"marketplace-svc/helper/global"
@@ -65,20 +64,20 @@ func (s elasticMerchantServiceImpl) SearchMerchantProduct(ctx context.Context, c
 	}
 
 	// hit customer info marketplace
-	customerInfo, err := communicates.GetCustomerInfo(log, cfg, input.Token)
-	if err != nil {
-		log.Error(err)
-		return newMerchantProductResponse, pagination, message.FailedMsg, err
-	}
-	if customerInfo.Message != "" {
-		return newMerchantProductResponse, pagination, message.Message{Code: 400, Message: customerInfo.Message}, err
-	}
-	if customerInfo.Data.Record.Address == nil || customerInfo.Data.Record.Address.Latitude == nil || customerInfo.Data.Record.Address.Longitude == nil {
-		return newMerchantProductResponse, pagination, message.AddressNotFound, err
-	}
+	// customerInfo, err := communicates.GetCustomerInfo(log, cfg, input.Token)
+	// if err != nil {
+	// 	log.Error(err)
+	// 	return newMerchantProductResponse, pagination, message.FailedMsg, err
+	// }
+	// if customerInfo.Message != "" {
+	// 	return newMerchantProductResponse, pagination, message.Message{Code: 400, Message: customerInfo.Message}, err
+	// }
+	// if customerInfo.Data.Record.Address == nil || customerInfo.Data.Record.Address.Latitude == nil || customerInfo.Data.Record.Address.Longitude == nil {
+	// 	return newMerchantProductResponse, pagination, message.AddressNotFound, err
+	// }
 
-	lat, _ := strconv.ParseFloat(*customerInfo.Data.Record.Address.Latitude, 64)
-	lon, _ := strconv.ParseFloat(*customerInfo.Data.Record.Address.Longitude, 64)
+	lat := input.Body.Lat
+	lon := input.Body.Lon
 	var orderBy string
 
 	if input.Sort == "" {
