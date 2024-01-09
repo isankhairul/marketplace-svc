@@ -79,6 +79,7 @@ var UnauthorizedError = Message{Code: 34007, Message: "No authorization token wa
 var NotAllowed = Message{Code: 405213, Message: "Request Not Allowed"}
 var UnauthorizedTokenDevice = Message{Code: 401320, Message: "Token Device Unauthorized"}
 var SessionLoginExpired = Message{Code: 401231, Message: "Sesi Anda telah habis. Silakan login kembali"}
+var ErrInvalidReqBody = Message{Code: 400009, Message: "Invalid request body"}
 
 // media-svc
 // error code upload media

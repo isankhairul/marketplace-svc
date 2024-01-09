@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"marketplace-svc/app/model/base"
 	"marketplace-svc/helper/global"
+
+	validation "github.com/itgelo/ozzo-validation"
 )
 
 type MerchantRequest struct {
@@ -133,4 +135,11 @@ func (req MerchantProductRequest) DefaultPagination() MerchantProductRequest {
 		req.Page = 1
 	}
 	return req
+}
+
+func (req MerchantProductRequest) Validate() error {
+	return validation.ValidateStruct(&req.Body,
+		validation.Field(&req.Body.Lat, validation.Required),
+		validation.Field(&req.Body.Lon, validation.Required),
+	)
 }

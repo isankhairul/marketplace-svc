@@ -17,6 +17,7 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/schema v1.2.0
+	github.com/itgelo/ozzo-validation v1.0.0
 	github.com/itgelo/ozzo-validation/v4 v4.3.1
 	github.com/jackc/pgx/v5 v5.4.3
 	github.com/lib/pq v1.10.9
