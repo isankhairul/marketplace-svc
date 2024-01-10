@@ -86,12 +86,12 @@ func (s elasticMerchantServiceImpl) SearchMerchantProduct(ctx context.Context, c
 	var orderBy string
 
 	if input.Sort == "" {
-		orderBy = "distance"
+		orderBy = "recommendation"
 	} else {
 		orderBy = input.Sort
 	}
 
-	if orderBy != "distance" && orderBy != "fulfill" {
+	if orderBy != "distance" && orderBy != "fulfill" && orderBy != "recommendation" {
 		return newMerchantProductResponse, pagination, message.MerchantProductSearchSortNotFound, err
 	}
 
@@ -281,6 +281,15 @@ func (s elasticMerchantServiceImpl) buildQuerySearchMerchantProduct(input reques
 											"order": "asc",
 										},
 									},
+								},
+								"from": 0,
+								"size": input.Limit,
+							},
+						}
+					} else if orderBy == "fulfill" {
+						aggs["sort"] = map[string]interface{}{
+							"bucket_sort": map[string]interface{}{
+								"sort": []map[string]interface{}{
 									{
 										"fulfill.value": map[string]interface{}{
 											"order": "desc",
@@ -291,7 +300,7 @@ func (s elasticMerchantServiceImpl) buildQuerySearchMerchantProduct(input reques
 								"size": input.Limit,
 							},
 						}
-					} else if orderBy == "fulfill" {
+					} else if orderBy == "recommendation" {
 						aggs["sort"] = map[string]interface{}{
 							"bucket_sort": map[string]interface{}{
 								"sort": []map[string]interface{}{
@@ -648,14 +657,18 @@ func (s elasticMerchantServiceImpl) transformSearchMerchantProduct(rs responseel
 						productOrdered[i].UOMName = productAvailable[j].UOMName
 						//added image in product_ordered
 						productOrdered[i].Image = productAvailable[j].Image
+						//added stock merchant
+						productOrdered[i].QTYAvailable = productAvailable[j].QTY
 						break
 					}
 				}
 
 				if found && orderedAvailable == 1 {
 					productOrdered[i].Status = "available"
+					productOrdered[i].IsAvailable = true
 				} else if found && orderedAvailable == 0 {
 					productOrdered[i].Status = "oos"
+					productOrdered[i].IsAvailable = false
 
 				} else {
 					productOrdered[i].Status = "notavailable"
@@ -703,33 +716,51 @@ func (s elasticMerchantServiceImpl) transformSearchMerchantProduct(rs responseel
 			// mapping product_ordered
 			var productItems []responseelastic.MerchantProductItems
 			var totalPrice float64
+			var qtyAvailable float64
+			var availableItems int
 			for _, item := range productOrdered {
 				if item.Status != "notavailable" { // hanya menampilkan product available dan oos
+
 					if item.Status == "available" { // hanya menambahkan price di product yang status nya available
 						totalPrice = item.SpecialPrice * float64(item.QTY)
 					}
+
+					if item.QTYAvailable <= float64(item.QTY) {
+						qtyAvailable = item.QTYAvailable
+					} else {
+						qtyAvailable = float64(item.QTY)
+					}
+
+					if item.IsAvailable {
+						availableItems++
+					}
+
 					productItems = append(productItems, responseelastic.MerchantProductItems{
 						SKU:          item.SKU,
 						Name:         item.Name,
 						QTY:          item.QTY,
+						QTYAvailable: qtyAvailable,
 						UOM:          item.UOM,
 						UOMName:      item.UOMName,
 						SellingPrice: item.SellingPrice,
 						SpecialPrice: item.SpecialPrice,
 						TotalPrice:   totalPrice,
 						Image:        item.Image,
-						Status:       item.Status,
+						IsAvailable:  item.IsAvailable,
+						// Status:       item.Status,
 					})
 				}
 			}
 
 			response := responseelastic.MerchantProductResponse{
-				UID:        merchantUID.(string),
-				Name:       merchantName.(string),
-				Distance:   distance,
-				Items:      productItems,
-				TotalPrice: CalculateTotalPriceItems(productItems),
-				Shippings:  shippingDuration,
+				UID:            merchantUID.(string),
+				Name:           merchantName.(string),
+				Distance:       distance,
+				TotalPrice:     CalculateTotalPriceItems(productItems),
+				Shippings:      shippingDuration,
+				AvailableItems: availableItems,
+				TotalItems:     len(productSkus),
+				Items:          productItems,
 			}
 
 			allMerchantResponses = append(allMerchantResponses, response)
