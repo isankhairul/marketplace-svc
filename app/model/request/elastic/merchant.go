@@ -25,7 +25,7 @@ type MerchantRequest struct {
 }
 
 func (req MerchantRequest) ToString() string {
-	return fmt.Sprintf("%s-%s-%d-%d-%s-%s-%s-%d-%d-%d", //nolint:govet
+	return fmt.Sprintf("%s-%s-%s-%s-%s-%s-%s-%d-%d-%d", //nolint:govet
 		req.Query, req.Fields, req.PID, req.CID, req.Rating, req.Type, req.Zipcode, req.StoreID, req.Page, req.Limit)
 }
 

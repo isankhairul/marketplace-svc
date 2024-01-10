@@ -3,7 +3,7 @@ package middleware
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"marketplace-svc/app"
 	"net/http"
 	"net/http/httptest"
@@ -31,19 +31,21 @@ func LoggingMiddleware(infra *app.Infra) Middleware {
 			reqBodyBytes := []byte{}
 			if !strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
 				var err error
-				reqBodyBytes, err = ioutil.ReadAll(r.Body)
+				reqBodyBytes, err = io.ReadAll(r.Body)
 
 				if err != nil {
 					log.Error(err)
 					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 					return
 				}
-				r.Body = ioutil.NopCloser(bytes.NewBuffer(reqBodyBytes))
+				r.Body = io.NopCloser(bytes.NewBuffer(reqBodyBytes))
 
 				if len(reqBodyBytes) > 0 {
 					// change request hidden
 					var HiddenRequest map[string]any
-					json.Unmarshal(reqBodyBytes, &HiddenRequest)
+					if err := json.Unmarshal(reqBodyBytes, &HiddenRequest); err != nil {
+						log.Error(err)
+					}
 
 					events := strings.Split(hiddenRequestVariable, ",")
 					for _, event := range events {

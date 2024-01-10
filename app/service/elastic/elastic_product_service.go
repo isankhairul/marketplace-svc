@@ -158,7 +158,9 @@ func (s elasticProductServiceImpl) getMerchants(item map[string]interface{}) mod
 	}
 	var sp []modelelastic.EsProductFlatSpecialPrice
 	var epfsp []map[string]interface{}
-	json.Unmarshal([]byte(item["special_prices"].(string)), &epfsp)
+	if err := json.Unmarshal([]byte(item["special_prices"].(string)), &epfsp); err != nil {
+		s.logger.Error(errors.New("Error special_prices: " + err.Error()))
+	}
 	for _, val := range epfsp {
 		sp = append(sp, modelelastic.EsProductFlatSpecialPrice{
 			CustomerGroupID: int32(val["customer_group_id"].(float64)),

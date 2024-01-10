@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
-	"github.com/urfave/cli/v2"
-	"io/ioutil"
+	"io"
 	"log"
 	"marketplace-svc/app"
 	"marketplace-svc/app/model/base"
@@ -17,6 +15,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"github.com/urfave/cli/v2"
 )
 
 type OrderCreateNotify struct {
@@ -46,7 +47,6 @@ func (cp OrderCreateNotify) Cmd() *cli.Command {
 }
 
 func (cp OrderCreateNotify) Subscriber(indices int) error {
-
 	// publish task
 	cp.publishTask()
 
@@ -116,11 +116,18 @@ func (cp OrderCreateNotify) publishTask() {
 	if err != nil {
 		panic(err)
 	}
+
 	resp, err := http.Post(cfg.Server+cfg.EndpointAuth, "application/json", bytes.NewBuffer(requestBody))
+	if err != nil {
+		cp.Infra.Log.Error(errors.New("Error making HTTP post: " + err.Error()))
+
+	}
 	defer resp.Body.Close()
 
 	var loginResult map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&loginResult)
+	if err := json.NewDecoder(resp.Body).Decode(&loginResult); err != nil {
+		cp.Infra.Log.Error(errors.New("Error Login Result: " + err.Error()))
+	}
 
 	cp.Infra.Log.Info("RQ: " + cfg.Server + cfg.EndpointAuth)
 
@@ -128,12 +135,20 @@ func (cp OrderCreateNotify) publishTask() {
 	client := &http.Client{}
 
 	respQ, err := http.NewRequest("GET", cfg.Server+cfg.EndpointQueue+"s", nil)
+	if err != nil {
+		cp.Infra.Log.Info("Error making HTTP GET request: " + fmt.Sprint(err))
+	}
 	respQ.Header.Add("Authorization", "Bearer "+token)
 	reqQ, err := client.Do(respQ)
+	if err != nil {
+		cp.Infra.Log.Info("Error making client do: " + fmt.Sprint(err))
+	}
 	defer reqQ.Body.Close()
 
 	var tempQueueResult map[string]interface{}
-	json.NewDecoder(reqQ.Body).Decode(&tempQueueResult)
+	if err := json.NewDecoder(reqQ.Body).Decode(&tempQueueResult); err != nil {
+		cp.Infra.Log.Error(errors.New("Error Queue Result: " + err.Error()))
+	}
 
 	byteData, _ := json.Marshal(tempQueueResult["data"].(map[string]interface{})["records"])
 	orderCancel := request.OrderCancelArr{}
@@ -192,12 +207,17 @@ func (cp OrderCreateNotify) initPushData(postInterval int, currentInterval int, 
 	}
 
 	var loginResult map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&loginResult)
+	if err := json.NewDecoder(resp.Body).Decode(&loginResult); err != nil {
+		cp.Infra.Log.Error(errors.New("Error Login Result: " + err.Error()))
+	}
 
 	token := fmt.Sprintf("%v", loginResult["data"].(map[string]interface{})["record"].(map[string]interface{})["token"])
 
 	var m map[string]interface{}
 	err = json.Unmarshal(messageData, &m)
+	if err != nil {
+		cp.Infra.Log.Error(errors.New("Error JSON: " + err.Error()))
+	}
 	notifyCode := fmt.Sprintf("%v", m["notify_code"])
 	merchantId := fmt.Sprintf("%v", m["merchant_id"])
 	if m["merchant_id"] == nil {
@@ -207,6 +227,10 @@ func (cp OrderCreateNotify) initPushData(postInterval int, currentInterval int, 
 	client := &http.Client{}
 
 	respQ, err := http.NewRequest("GET", cfg.Server+cfg.EndpointWebhook+"s?module=order-create&third_party="+notifyCode+"&merchant_id="+merchantId, nil)
+	if err != nil {
+		cp.Infra.Log.Error(errors.New("Error HTTP GET: " + err.Error()))
+		return
+	}
 	respQ.Header.Add("Authorization", "Bearer "+token)
 	reqQ, err := client.Do(respQ)
 
@@ -215,7 +239,9 @@ func (cp OrderCreateNotify) initPushData(postInterval int, currentInterval int, 
 	}
 
 	var tempRegisteredWebhookResult map[string]interface{}
-	json.NewDecoder(reqQ.Body).Decode(&tempRegisteredWebhookResult)
+	if err := json.NewDecoder(reqQ.Body).Decode(&tempRegisteredWebhookResult); err != nil {
+		cp.Infra.Log.Error(errors.New("Error Registered Webhook Result: " + err.Error()))
+	}
 
 	byteData, _ := json.Marshal(tempRegisteredWebhookResult["data"].(map[string]interface{})["records"])
 	registeredWebhook := request.RegisteredWebhookArr{}
@@ -226,16 +252,30 @@ func (cp OrderCreateNotify) initPushData(postInterval int, currentInterval int, 
 	}
 	for _, data := range registeredWebhook {
 		respP, err := http.NewRequest("POST", data.Url, bytes.NewBuffer(payload))
+		if err != nil {
+			cp.Infra.Log.Error(errors.New("Error HTTP POST: " + err.Error()))
+			return
+		}
 
 		respHQ, err := http.NewRequest("GET", fmt.Sprintf("%s/%d/create-header?merchant_id=%s",
 			cfg.Server+cfg.EndpointWebhook, data.ID, merchantId), nil)
+		if err != nil {
+			cp.Infra.Log.Error(errors.New("Error HTTP GET: " + err.Error()))
+			return
+		}
 
 		respHQ.Header.Add("Authorization", "Bearer "+token)
 		reqHQ, err := client.Do(respHQ)
+		if err != nil {
+			cp.Infra.Log.Error(errors.New("Error Client Authorization: " + err.Error()))
+			return
+		}
 		defer reqHQ.Body.Close()
 
 		var tempHeaderResult map[string]interface{}
-		json.NewDecoder(reqHQ.Body).Decode(&tempHeaderResult)
+		if err := json.NewDecoder(reqHQ.Body).Decode(&tempHeaderResult); err != nil {
+			cp.Infra.Log.Error(errors.New("Error header result: " + err.Error()))
+		}
 
 		byteHeaderData, _ := json.Marshal(tempHeaderResult["data"])
 		dataHeader := request.AuthorizationData{}
@@ -255,7 +295,7 @@ func (cp OrderCreateNotify) initPushData(postInterval int, currentInterval int, 
 			return
 		}
 
-		tempBodyResult, err := ioutil.ReadAll(reqP.Body)
+		tempBodyResult, err := io.ReadAll(reqP.Body)
 		if err != nil {
 			cp.Infra.Log.Error(errors.New("Error Posting Data: " + err.Error()))
 			return
@@ -295,7 +335,15 @@ func (cp OrderCreateNotify) initPushData(postInterval int, currentInterval int, 
 			m["status_message"] = statusMessage
 			m["message_result"] = bodyString
 			newMessageData, err := json.Marshal(m)
+			if err != nil {
+				cp.Infra.Log.Error(errors.New("Error JSON: " + err.Error()))
+				return
+			}
 			respD, err := http.NewRequest("DELETE", cfg.Server+cfg.EndpointQueue, bytes.NewBuffer(newMessageData))
+			if err != nil {
+				cp.Infra.Log.Error(errors.New("Error HTTP DELETE: " + err.Error()))
+				return
+			}
 			respD.Header.Add("Authorization", "Bearer "+token)
 			respD.Header.Add("Content-Type", "application/json")
 			reqD, err := client.Do(respD)
@@ -304,7 +352,7 @@ func (cp OrderCreateNotify) initPushData(postInterval int, currentInterval int, 
 				return
 			}
 			log.Println(reqD)
-			bodyDeleteBytes, err := ioutil.ReadAll(reqD.Body)
+			bodyDeleteBytes, err := io.ReadAll(reqD.Body)
 			if err != nil {
 				cp.Infra.Log.Error(errors.New("Error Remove Queue Resp: " + err.Error()))
 				return

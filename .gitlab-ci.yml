@@ -45,6 +45,9 @@ vulnerability-check:
     name: $CI_REGISTRY/base-os/golang:1.21.1-alpine
   script:
     - apk add git wget
+    - echo "machine gitlab.klik.doctor login $GITLAB_USER password $GITLAB_PASSWORD" > /root/.netrc
+    - chmod 600 /root/.netrc
+    - export GOPRIVATE=gitlab.klik.doctor
     - go install github.com/google/osv-scanner/cmd/osv-scanner@v1
     - osv-scanner --version
     - osv-scanner --lockfile './go.mod'

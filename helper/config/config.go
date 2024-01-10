@@ -79,9 +79,10 @@ type URLConfig struct {
 }
 
 type ServerConfig struct {
-	Port      int       `mapstructure:"port"`
-	Env       string    `mapstructure:"env"`
-	LogConfig LogConfig `mapstructure:"log"`
+	Port      int           `mapstructure:"port"`
+	Env       string        `mapstructure:"env"`
+	LogConfig LogConfig     `mapstructure:"log"`
+	Timeout   time.Duration `mapstructure:"timeout" default:"10"`
 }
 
 type LogConfig struct {

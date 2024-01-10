@@ -69,8 +69,9 @@ func main() {
 
 	address := flag.String("listen", ":"+strconv.Itoa(cfg.Server.Port), "Listen address.")
 	httpServer := http.Server{
-		Addr:    *address,
-		Handler: finalHandler,
+		Addr:              *address,
+		Handler:           finalHandler,
+		ReadHeaderTimeout: time.Second * cfg.Server.Timeout,
 	}
 
 	// Setup graceful shutdown
