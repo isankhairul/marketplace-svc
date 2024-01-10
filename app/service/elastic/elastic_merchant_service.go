@@ -619,6 +619,7 @@ func (s elasticMerchantServiceImpl) transformSearchMerchantProduct(rs responseel
 						for _, item := range hits2 {
 							value, _ := item.(map[string]interface{})["_source"].(map[string]interface{})
 							productSKU := value["product_sku"].(string)
+							merchantSKU := value["merchant_sku"].(string)
 							productStock := value["stock"].(float64)
 							// add selling_price and special_price
 							price := s.GetPriceProduct(productSKU, storeID)
@@ -626,6 +627,7 @@ func (s elasticMerchantServiceImpl) transformSearchMerchantProduct(rs responseel
 							productDetail := s.GetProductDetail(productSKU, storeID)
 							productAvailable = append(productAvailable, responseelastic.ProductsAvailable{
 								SKU:          productSKU,
+								MerchantSKU:  merchantSKU,
 								Name:         productDetail["name"].(string),
 								QTY:          productStock,
 								UOM:          productDetail["uom"].(string),
@@ -659,6 +661,8 @@ func (s elasticMerchantServiceImpl) transformSearchMerchantProduct(rs responseel
 						productOrdered[i].Image = productAvailable[j].Image
 						//added stock merchant
 						productOrdered[i].QTYAvailable = productAvailable[j].QTY
+						//added merchant_sku
+						productOrdered[i].MerchantSKU = productAvailable[j].MerchantSKU
 						break
 					}
 				}
@@ -686,6 +690,7 @@ func (s elasticMerchantServiceImpl) transformSearchMerchantProduct(rs responseel
 			var responseElastic responseelastic.SearchResponse
 			_ = json.NewDecoder(resp.Body).Decode(&responseElastic)
 
+			merchantID := responseElastic.Hits.Hits[0].Source.(map[string]interface{})["id"]
 			merchantUID := responseElastic.Hits.Hits[0].Source.(map[string]interface{})["uid"]
 			merchantName := responseElastic.Hits.Hits[0].Source.(map[string]interface{})["name"]
 			lat2, _ := strconv.ParseFloat(responseElastic.Hits.Hits[0].Source.(map[string]interface{})["location"].(map[string]interface{})["lat"].(string), 64)
@@ -701,6 +706,7 @@ func (s elasticMerchantServiceImpl) transformSearchMerchantProduct(rs responseel
 			coordinates2 := responseelastic.Coordinates{Lat: lat2, Lon: lon2}
 
 			response2 = map[string]interface{}{
+				"merchant_id":        merchantID,
 				"merchant_uid":       merchantUID,
 				"merchant_name":      merchantName,
 				"distance":           distance,
@@ -737,6 +743,7 @@ func (s elasticMerchantServiceImpl) transformSearchMerchantProduct(rs responseel
 
 					productItems = append(productItems, responseelastic.MerchantProductItems{
 						SKU:          item.SKU,
+						MerchantSKU:  item.MerchantSKU,
 						Name:         item.Name,
 						QTY:          item.QTY,
 						QTYAvailable: qtyAvailable,
@@ -753,6 +760,7 @@ func (s elasticMerchantServiceImpl) transformSearchMerchantProduct(rs responseel
 			}
 
 			response := responseelastic.MerchantProductResponse{
+				ID:             merchantID.(float64),
 				UID:            merchantUID.(string),
 				Name:           merchantName.(string),
 				Distance:       distance,
