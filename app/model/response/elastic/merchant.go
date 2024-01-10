@@ -82,12 +82,14 @@ type MerchantOrderReview struct {
 
 // swagger:model MerchantProductResponse
 type MerchantProductResponse struct {
-	UID        string                 `json:"uid"`
-	Name       string                 `json:"name"`
-	Distance   float64                `json:"distance"`
-	TotalPrice float64                `json:"total_price"`
-	Shippings  []interface{}          `json:"shippings"`
-	Items      []MerchantProductItems `json:"items"`
+	UID            string                 `json:"uid"`
+	Name           string                 `json:"name"`
+	Distance       float64                `json:"distance"`
+	TotalPrice     float64                `json:"total_price"`
+	Shippings      []interface{}          `json:"shippings"`
+	AvailableItems int                    `json:"available_items"`
+	TotalItems     int                    `json:"total_items"`
+	Items          []MerchantProductItems `json:"items"`
 }
 
 // swagger:model MerchantProductItems
@@ -95,13 +97,15 @@ type MerchantProductItems struct {
 	SKU          string  `json:"sku"`
 	Name         string  `json:"name"`
 	QTY          int     `json:"qty"`
+	QTYAvailable float64 `json:"qty_available"`
 	UOM          string  `json:"uom"`
 	UOMName      string  `json:"uom_name"`
 	SellingPrice float64 `json:"selling_price"`
 	SpecialPrice float64 `json:"special_price"`
 	TotalPrice   float64 `json:"total_price"`
 	Image        string  `json:"image"`
-	Status       string  `json:"status"`
+	IsAvailable  bool    `json:"is_available"`
+	Status       string  `json:"status,omitempty"`
 }
 
 type ProductsAvailable struct {
@@ -119,12 +123,14 @@ type ProductsOrdered struct {
 	SKU          string  `json:"sku"`
 	Name         string  `json:"name"`
 	QTY          int     `json:"qty"`
+	QTYAvailable float64 `json:"qty_available"`
 	UOM          string  `json:"uom"`
 	UOMName      string  `json:"uom_name"`
 	SellingPrice float64 `json:"selling_price"`
 	SpecialPrice float64 `json:"special_price"`
-	Available    float64 `json:"status"`
-	Status       string  `json:"status"` // out of stock or not available
+	Available    float64 `json:"available"`
+	IsAvailable  bool    `json:"is_available"` // out of stock (false) or not available (true)
+	Status       string  `json:"status"`       // out of stock or not available
 	Image        string  `json:"image"`
 }
 
