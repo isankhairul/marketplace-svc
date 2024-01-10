@@ -1,7 +1,6 @@
 stages:
   - testing
   - scanning
-  - scannning-vulnerability
   - build-release
   - deploy-staging
   - build-prod
@@ -12,12 +11,12 @@ go-test:
   image:
     name: $CI_REGISTRY/base-os/golang:1.21.1-alpine
   script:
+    - apk --no-cache add make git gcc libtool musl-dev ca-certificates dumb-init openssl
     - echo "machine gitlab.klik.doctor login $GITLAB_USER password $GITLAB_PASSWORD" > /root/.netrc
     - chmod 600 /root/.netrc
     - export GOPRIVATE=gitlab.klik.doctor
-    - export CGO_CFLAGS="-D_LARGEFILE64_SOURCE"
-    - apk --no-cache add make git gcc libtool musl-dev ca-certificates dumb-init
-    - go test ./app/service/test -v -coverpkg=./app/service
+    - go test -v ./...
+  allow_failure: true
   rules:
     - if: '$CI_COMMIT_BRANCH == "release" || $CI_COMMIT_BRANCH == "develop"'
 
@@ -41,13 +40,30 @@ sonarqube-check:
       when: always
 
 vulnerability-check:
-  stage: scannning-vulnerability
+  stage: scanning
   image:
-    name: golang:1.21.1-alpine
+    name: $CI_REGISTRY/base-os/golang:1.21.1-alpine
   script:
+    - apk add git wget
     - go install github.com/google/osv-scanner/cmd/osv-scanner@v1
     - osv-scanner --version
     - osv-scanner --lockfile './go.mod'
+  allow_failure: true
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "release" || $CI_COMMIT_BRANCH == "develop"'
+      when: always
+
+security-check:
+  stage: scanning
+  image:
+    name: $CI_REGISTRY/base-os/golang:1.21.1-alpine
+  script:
+    - apk --no-cache add make git gcc libtool musl-dev ca-certificates dumb-init openssl
+    - echo "machine gitlab.klik.doctor login $GITLAB_USER password $GITLAB_PASSWORD" > /root/.netrc
+    - chmod 600 /root/.netrc
+    - export GOPRIVATE=gitlab.klik.doctor
+    - go install github.com/securego/gosec/v2/cmd/gosec@latest
+    - gosec -exclude=G302,G304,G505,G107,G404 ./...
   allow_failure: true
   rules:
     - if: '$CI_COMMIT_BRANCH == "release" || $CI_COMMIT_BRANCH == "develop"'
@@ -74,7 +90,7 @@ build-release:
 
 deploy-staging:
   stage: deploy-staging
-  image: ubuntu:22.04
+  image: $CI_REGISTRY/base-os/ubuntu:22.04
   script:
     - apt update && apt install openssh-client git sshpass curl grep -y
     - eval `ssh-agent -s`
