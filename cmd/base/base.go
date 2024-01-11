@@ -1,10 +1,11 @@
 package cmdbase
 
 import (
-	"github.com/urfave/cli/v2"
 	"marketplace-svc/app"
 	"marketplace-svc/cmd/tasks"
 	"marketplace-svc/cmd/worker"
+
+	"github.com/urfave/cli/v2"
 )
 
 type BaseCommand struct {
@@ -20,7 +21,7 @@ func NewBaseCommand(infra app.Infra) *BaseCommand {
 
 	baseCommand.Cmd.Name = "Command execution for Marketplace CLI"
 	baseCommand.Cmd.Usage = "Run task by command CLI for Membership"
-	baseCommand.Cmd.Authors = []*cli.Author{{"Khairul Ihksan", "khairul.ihksan@klikdokter.com"}}
+	baseCommand.Cmd.Authors = []*cli.Author{{Name: "Khairul Ihksan", Email: "khairul.ihksan@klikdokter.com"}}
 	baseCommand.Cmd.Version = "1.0.0"
 
 	baseCommand.Cmd.CommandNotFound = func(c *cli.Context, command string) {

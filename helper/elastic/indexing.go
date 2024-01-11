@@ -6,15 +6,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/alitto/pond"
-	"github.com/elastic/go-elasticsearch/v7/esapi"
-	"github.com/elastic/go-elasticsearch/v7/esutil"
-	"golang.org/x/exp/slices"
 	"io"
 	"log"
 	"marketplace-svc/pkg/util"
 	"os"
 	"time"
+
+	"github.com/alitto/pond"
+	"github.com/elastic/go-elasticsearch/v7/esapi"
+	"github.com/elastic/go-elasticsearch/v7/esutil"
+	"golang.org/x/exp/slices"
 )
 
 func (e elasticClient) BulkIndex(body []interface{}, indexName string, filename string, flush bool) error {
@@ -116,6 +117,10 @@ func (e elasticClient) Index(body []interface{}, indexName string) error {
 		Index:      indexName, // The default index name
 		NumWorkers: 5,         // The number of worker goroutines
 	})
+
+	if err != nil {
+		return err
+	}
 
 	// processing
 	for _, item := range body {

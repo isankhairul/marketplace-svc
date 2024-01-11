@@ -24,7 +24,7 @@ type KalstoreCustomerInfoAddress struct {
 	Province      string  `json:"province"`
 	CityID        int     `json:"city_id"`
 	City          string  `json:"city"`
-	DistrictID    int     `json:"district_id`
+	DistrictID    int     `json:"district_id"`
 	District      string  `json:"district"`
 	SubDistrict   string  `json:"subdistrict"`
 	ZIPCode       string  `json:"zipcode"`

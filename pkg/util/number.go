@@ -8,7 +8,7 @@ import (
 )
 
 func GenerateRandomNumber(len int, to int, data *string) {
-	rand.Seed(time.Now().UnixNano())
+	rand.NewSource(time.Now().UnixNano())
 	for i := 0; i < len; i++ {
 		*data += fmt.Sprintf("%d", rand.Intn(10))
 	}

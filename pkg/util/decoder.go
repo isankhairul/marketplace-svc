@@ -3,7 +3,6 @@ package util
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"strings"
 )
 
@@ -31,7 +30,7 @@ func Base64ToString(base64Str string) (*string, error) {
 		return nil, err
 	}
 
-	strVal := fmt.Sprintf("%s", arr)
+	strVal := string(arr)
 	return &strVal, nil
 }
 

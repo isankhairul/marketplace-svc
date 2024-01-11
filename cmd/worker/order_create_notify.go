@@ -304,12 +304,8 @@ func (cp OrderCreateNotify) initPushData(postInterval int, currentInterval int, 
 
 		statusCode := 200
 		statusMessage := "success"
-		if reqP.StatusCode == http.StatusOK {
-			statusCode = reqP.StatusCode
-			if statusCode != 200 {
-				statusMessage = "failed"
-			}
-		} else {
+
+		if reqP.StatusCode != http.StatusOK {
 			statusCode = 500
 			statusMessage = "failed"
 		}

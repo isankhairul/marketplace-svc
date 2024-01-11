@@ -3,12 +3,13 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm/logger"
 	"log"
 	"marketplace-svc/helper/config"
 	"os"
 	"time"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm/logger"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"gorm.io/gorm"
@@ -23,6 +24,10 @@ func NewGormConnectPostgres(cfg *config.DBConfig, opt *Option) (Database, error)
 	g := &gormdb{}
 
 	sqlDB, err := sql.Open("pgx", g.postgresDsn(cfg))
+	if err != nil {
+		return nil, err
+	}
+
 	db, err := gorm.Open(postgres.New(postgres.Config{
 		Conn: sqlDB,
 	}), g.options(cfg))
@@ -94,21 +99,6 @@ func (m *gormdb) postgresDsn(cfg *config.DBConfig) string {
 		"disable",
 		cfg.SchemaName,
 	)
-}
-
-func (m *gormdb) mysqlDsn(cfg *config.DBConfig) string {
-	return fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local",
-		cfg.Username,
-		cfg.Password,
-		cfg.Host,
-		cfg.Port,
-		cfg.DBName,
-	)
-}
-
-func (m *gormdb) sqliteDsn(cfg *config.DBConfig) string {
-	return cfg.DBName
 }
 
 func (m *gormdb) logger(cfg config.DBLogConfig) logger.Interface {

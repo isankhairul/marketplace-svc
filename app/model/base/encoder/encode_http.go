@@ -50,7 +50,6 @@ func EncodeError(ctx context.Context, err error, w http.ResponseWriter) {
 	switch e := err.(type) {
 	case validation.Errors, helpervalidation.ErrorsWithoutKey:
 		msgResponse = message.Message{Message: e.Error(), Code: message.ValidationError.Code}
-		statusResponse = http.StatusBadRequest
 	case request.MalformedRequest:
 		statusResponse = e.Status
 		if e.Message != "" {

@@ -2,7 +2,7 @@ package communicates
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"marketplace-svc/helper/config"
 	"net/http"
 
@@ -29,7 +29,7 @@ func GetCustomerInfo(log logger.Logger, cfg *config.KalcareAPI, token string) (*
 	}
 
 	defer res.Body.Close()
-	resp, err := ioutil.ReadAll(res.Body)
+	resp, err := io.ReadAll(res.Body)
 	if err != nil {
 		log.Error(err)
 	}

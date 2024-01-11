@@ -45,3 +45,9 @@ swagger:
 
 dev:
 	docker-compose -f docker-compose.dev.yml up
+
+scan-vulnerability:
+	osv-scanner --lockfile './go.mod'
+
+scan-security:
+	gosec -exclude=G302,G304,G505,G107,G404 ./...
