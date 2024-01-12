@@ -693,6 +693,7 @@ func (s elasticMerchantServiceImpl) transformSearchMerchantProduct(rs responseel
 			merchantID := responseElastic.Hits.Hits[0].Source.(map[string]interface{})["id"]
 			merchantUID := responseElastic.Hits.Hits[0].Source.(map[string]interface{})["uid"]
 			merchantName := responseElastic.Hits.Hits[0].Source.(map[string]interface{})["name"]
+			merchantType := responseElastic.Hits.Hits[0].Source.(map[string]interface{})["merchant_type"]
 			lat2, _ := strconv.ParseFloat(responseElastic.Hits.Hits[0].Source.(map[string]interface{})["location"].(map[string]interface{})["lat"].(string), 64)
 			lon2, _ := strconv.ParseFloat(responseElastic.Hits.Hits[0].Source.(map[string]interface{})["location"].(map[string]interface{})["lon"].(string), 64)
 			shippingDuration := responseElastic.Hits.Hits[0].Source.(map[string]interface{})["shipping_duration"].([]interface{})
@@ -709,6 +710,7 @@ func (s elasticMerchantServiceImpl) transformSearchMerchantProduct(rs responseel
 				"merchant_id":        merchantID,
 				"merchant_uid":       merchantUID,
 				"merchant_name":      merchantName,
+				"merchant_type":      merchantType,
 				"distance":           distance,
 				"distance2":          global.CalculateDistance(coordinates1.Lat, coordinates1.Lon, coordinates2.Lat, coordinates2.Lon, "km"),
 				"fulfill":            fulfill,
@@ -763,6 +765,7 @@ func (s elasticMerchantServiceImpl) transformSearchMerchantProduct(rs responseel
 				ID:             merchantID.(float64),
 				UID:            merchantUID.(string),
 				Name:           merchantName.(string),
+				Type:           merchantType.(string),
 				Distance:       distance,
 				TotalPrice:     CalculateTotalPriceItems(productItems),
 				Shippings:      shippingDuration,

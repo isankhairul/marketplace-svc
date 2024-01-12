@@ -85,6 +85,7 @@ type MerchantProductResponse struct {
 	ID             float64                `json:"id"`
 	UID            string                 `json:"uid"`
 	Name           string                 `json:"name"`
+	Type           string                 `json:"type"`
 	Distance       float64                `json:"distance"`
 	TotalPrice     float64                `json:"total_price"`
 	Shippings      []interface{}          `json:"shippings"`
