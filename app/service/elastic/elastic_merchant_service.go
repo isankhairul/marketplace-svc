@@ -799,7 +799,7 @@ func (s elasticMerchantServiceImpl) GetProductDetail(productSKU string, storeID 
 					},
 					map[string]interface{}{
 						"term": map[string]interface{}{
-							"is_pharmacy": 1,
+							"is_prescription": 1,
 						},
 					},
 					map[string]interface{}{

@@ -289,7 +289,7 @@ func (s elasticProductServiceImpl) buildQuerySearch(input requestelastic.Product
 	filters := []map[string]interface{}{
 		{
 			"term": map[string]interface{}{
-				"is_pharmacy": 1,
+				"is_prescription": 1,
 			},
 		},
 		{
