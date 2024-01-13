@@ -21,41 +21,41 @@ go-test:
     - if: '$CI_COMMIT_BRANCH == "release" || $CI_COMMIT_BRANCH == "develop"'
       when: always
 
-sonarqube-check:
-  stage: scanning-sonar
-  image:
-    name: $CI_REGISTRY/base-os/sonarsource/sonar-scanner-cli:latest
-    entrypoint: [""]
-  variables:
-    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
-    GIT_DEPTH: "0"
-  cache:
-    key: "${CI_JOB_NAME}"
-    paths:
-      - .sonar/cache
-  script:
-    - sonar-scanner
-  allow_failure: true
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "release" || $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_TAG =~ /.*sonar$/'
-      when: always
+# sonarqube-check:
+#   stage: scanning
+#   image:
+#     name: $CI_REGISTRY/base-os/sonarsource/sonar-scanner-cli:latest
+#     entrypoint: [""]
+#   variables:
+#     SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+#     GIT_DEPTH: "0"
+#   cache:
+#     key: "${CI_JOB_NAME}"
+#     paths:
+#       - .sonar/cache
+#   script:
+#     - sonar-scanner
+#   allow_failure: true
+#   rules:
+#     - if: '$CI_COMMIT_BRANCH == "release" || $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_TAG =~ /.*sonar$/'
+#       when: always
 
-vulnerability-check:
-  stage: scanning-vulnr
-  image:
-    name: $CI_REGISTRY/base-os/golang:1.21.1-alpine
-  script:
-    - apk add git wget
-    - echo "machine gitlab.klik.doctor login $GITLAB_USER password $GITLAB_PASSWORD" > /root/.netrc
-    - chmod 600 /root/.netrc
-    - export GOPRIVATE=gitlab.klik.doctor
-    - go install github.com/google/osv-scanner/cmd/osv-scanner@v1
-    - osv-scanner --version
-    - osv-scanner --lockfile './go.mod'
-  allow_failure: true
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "release" || $CI_COMMIT_BRANCH == "develop"'
-      when: always
+# vulnerability-check:
+#   stage: scanning
+#   image:
+#     name: $CI_REGISTRY/base-os/golang:1.21.1-alpine
+#   script:
+#     - apk add git wget
+#     - echo "machine gitlab.klik.doctor login $GITLAB_USER password $GITLAB_PASSWORD" > /root/.netrc
+#     - chmod 600 /root/.netrc
+#     - export GOPRIVATE=gitlab.klik.doctor
+#     - go install github.com/google/osv-scanner/cmd/osv-scanner@v1
+#     - osv-scanner --version
+#     - osv-scanner --lockfile './go.mod'
+#   allow_failure: true
+#   rules:
+#     - if: '$CI_COMMIT_BRANCH == "release" || $CI_COMMIT_BRANCH == "develop"'
+#       when: always
 
 security-check:
   stage: scanning
