@@ -107,9 +107,10 @@ type MerchantProductRequest struct {
 }
 
 type BodyMerchantProduct struct {
-	Lat   float64             `json:"lat"`
-	Lon   float64             `json:"lon"`
-	Items []BodyReceiptsItems `json:"items"`
+	ApotekUID string              `json:"apotek_uid"`
+	Lat       float64             `json:"lat"`
+	Lon       float64             `json:"lon"`
+	Items     []BodyReceiptsItems `json:"items"`
 }
 
 type BodyReceiptsItems struct {
