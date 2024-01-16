@@ -2,6 +2,124 @@ basePath: /marketplace-svc/api/v1/
 consumes:
     - application/json
 definitions:
+    BodyMerchantProduct:
+        properties:
+            items:
+                items:
+                    $ref: '#/definitions/BodyReceiptsItems'
+                type: array
+                x-go-name: Items
+            lat:
+                format: double
+                type: number
+                x-go-name: Lat
+            lon:
+                format: double
+                type: number
+                x-go-name: Lon
+        type: object
+        x-go-package: marketplace-svc/app/model/request/elastic
+    BodyReceiptsItems:
+        properties:
+            qty:
+                format: int64
+                type: integer
+                x-go-name: QTY
+            sku:
+                type: string
+                x-go-name: SKU
+        type: object
+        x-go-package: marketplace-svc/app/model/request/elastic
+    MerchantProductItems:
+        properties:
+            image:
+                type: string
+                x-go-name: Image
+            is_available:
+                type: boolean
+                x-go-name: IsAvailable
+            merchant_sku:
+                type: string
+                x-go-name: MerchantSKU
+            name:
+                type: string
+                x-go-name: Name
+            qty:
+                format: int64
+                type: integer
+                x-go-name: QTY
+            qty_available:
+                format: double
+                type: number
+                x-go-name: QTYAvailable
+            selling_price:
+                format: double
+                type: number
+                x-go-name: SellingPrice
+            sku:
+                type: string
+                x-go-name: SKU
+            special_price:
+                format: double
+                type: number
+                x-go-name: SpecialPrice
+            status:
+                type: string
+                x-go-name: Status
+            total_price:
+                format: double
+                type: number
+                x-go-name: TotalPrice
+            uom:
+                type: string
+                x-go-name: UOM
+            uom_name:
+                type: string
+                x-go-name: UOMName
+        type: object
+        x-go-package: marketplace-svc/app/model/response/elastic
+    MerchantProductResponse:
+        properties:
+            available_items:
+                format: int64
+                type: integer
+                x-go-name: AvailableItems
+            distance:
+                format: double
+                type: number
+                x-go-name: Distance
+            id:
+                format: double
+                type: number
+                x-go-name: ID
+            items:
+                items:
+                    $ref: '#/definitions/MerchantProductItems'
+                type: array
+                x-go-name: Items
+            name:
+                type: string
+                x-go-name: Name
+            shippings:
+                items: {}
+                type: array
+                x-go-name: Shippings
+            total_items:
+                format: int64
+                type: integer
+                x-go-name: TotalItems
+            total_price:
+                format: double
+                type: number
+                x-go-name: TotalPrice
+            type:
+                type: string
+                x-go-name: Type
+            uid:
+                type: string
+                x-go-name: UID
+        type: object
+        x-go-package: marketplace-svc/app/model/response/elastic
     MetaResponse:
         properties:
             code:
@@ -116,9 +234,64 @@ definitions:
         type: object
         x-go-package: marketplace-svc/app/model/base
 info:
-    title: 'Klikdokter Api:'
+    title: 'Marketplace Service:'
     version: "0.1"
 paths:
+    /merchant-product:
+        post:
+            description: Merchant - List
+            operationId: MerchantProductRequest
+            parameters:
+                - description: Additional Fields
+                  example: '"description,short_description"'
+                  in: query
+                  name: fields
+                  type: string
+                  x-go-name: Fields
+                - description: StoreID
+                  format: int64
+                  in: query
+                  name: store_id
+                  type: integer
+                  x-go-name: StoreID
+                - description: Page number
+                  format: int64
+                  in: query
+                  name: page
+                  type: integer
+                  x-go-name: Page
+                - description: Maximum records per page
+                  format: int64
+                  in: query
+                  name: limit
+                  type: integer
+                  x-go-name: Limit
+                - description: Field to be sorted
+                  in: query
+                  name: Sort
+                  type: string
+                - $ref: '#/definitions/BodyMerchantProduct'
+                  in: query
+                  name: body
+                  x-go-name: Body
+            responses:
+                "200":
+                    description: Merchant - List success response
+                    schema:
+                        properties:
+                            data:
+                                properties:
+                                    records:
+                                        items:
+                                            $ref: '#/definitions/MerchantProductResponse'
+                                        type: array
+                                type: object
+                            meta:
+                                $ref: '#/definitions/MetaResponse'
+            security:
+                - Bearer: []
+            tags:
+                - Merchants
     /products:
         get:
             description: Product - List
@@ -153,6 +326,12 @@ paths:
                   name: limit
                   type: integer
                   x-go-name: Limit
+                - description: |-
+                    JSON value for filtering. The format is {"field_name": "filter_keyword", ...}
+                    Example {"name":"Dr Ican","str_no":"XXXX-XXXX"]}
+                  in: query
+                  name: Filter
+                  type: string
             responses:
                 "200":
                     description: Product - List success response

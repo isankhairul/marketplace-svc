@@ -46,6 +46,30 @@ func NewElasticMerchantService(
 	return &elasticMerchantServiceImpl{app, config, lg, br, esc}
 }
 
+// swagger:operation POST /merchant-product Merchants MerchantProductRequest
+// Merchant - List
+//
+// ---
+// tags:
+//   - "Merchants"
+//
+// security:
+// - Bearer: []
+// responses:
+//
+//	  '200':
+//		   description: Merchant - List success response
+//		   schema:
+//		       properties:
+//		           meta:
+//		               $ref: '#/definitions/MetaResponse'
+//		           data:
+//		               type: object
+//		               properties:
+//		                   records:
+//		                       type: array
+//		                       items:
+//		                           $ref: '#/definitions/MerchantProductResponse'
 func (s elasticMerchantServiceImpl) SearchMerchantProduct(ctx context.Context, cfg *config.KalcareAPI, input requestelastic.MerchantProductRequest) ([]responseelastic.MerchantProductResponse, base.Pagination, message.Message, error) {
 	log := s.app.LogWithContext(ctx)
 
@@ -188,18 +212,32 @@ func (s elasticMerchantServiceImpl) buildQuerySearchMerchantProduct(input reques
 
 					return shouldClauses
 				}(),
-				"must": []map[string]interface{}{
-					{
-						"term": map[string]interface{}{
-							"is_pharmacy": 1,
+				"must": func() []map[string]interface{} {
+					mustClauses := []map[string]interface{}{
+						{
+							"term": map[string]interface{}{
+								"is_pharmacy": 1,
+							},
 						},
-					},
-					{
-						"term": map[string]interface{}{
-							"status": 1,
+						{
+							"term": map[string]interface{}{
+								"status": 1,
+							},
 						},
-					},
-				},
+					}
+
+					if input.Body.ApotekUID != "" {
+						// for the VIP apotek
+						termClause := map[string]interface{}{
+							"term": map[string]interface{}{
+								"merchant_uid": input.Body.ApotekUID,
+							},
+						}
+						mustClauses = append(mustClauses, termClause)
+					}
+
+					return mustClauses
+				}(),
 			},
 		},
 		"aggs": map[string]interface{}{
