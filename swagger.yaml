@@ -4,6 +4,9 @@ consumes:
 definitions:
     BodyMerchantProduct:
         properties:
+            apotek_uid:
+                type: string
+                x-go-name: ApotekUID
             items:
                 items:
                     $ref: '#/definitions/BodyReceiptsItems'
@@ -168,6 +171,19 @@ definitions:
         type: object
         x-go-name: Pagination
         x-go-package: marketplace-svc/app/model/base
+    PharmaciesResponse:
+        properties:
+            code:
+                type: string
+                x-go-name: Code
+            name:
+                type: string
+                x-go-name: Name
+            uid:
+                type: string
+                x-go-name: UID
+        type: object
+        x-go-package: marketplace-svc/app/model/response/elastic
     ProductResponse:
         properties:
             description:
@@ -284,6 +300,65 @@ paths:
                                     records:
                                         items:
                                             $ref: '#/definitions/MerchantProductResponse'
+                                        type: array
+                                type: object
+                            meta:
+                                $ref: '#/definitions/MetaResponse'
+            security:
+                - Bearer: []
+            tags:
+                - Merchants
+    /pharmacies:
+        get:
+            description: Pharmacies - List
+            operationId: PharmaciesRequest
+            parameters:
+                - description: Global Search
+                  in: query
+                  name: q
+                  type: string
+                  x-go-name: Query
+                - in: query
+                  name: fields
+                  type: string
+                  x-go-name: Fields
+                - format: int64
+                  in: query
+                  name: store_id
+                  type: integer
+                  x-go-name: StoreID
+                - in: query
+                  name: store
+                  type: string
+                  x-go-name: Store
+                - in: query
+                  name: sort
+                  type: string
+                  x-go-name: Sort
+                - in: query
+                  name: dir
+                  type: string
+                  x-go-name: Dir
+                - format: int64
+                  in: query
+                  name: page
+                  type: integer
+                  x-go-name: Page
+                - format: int64
+                  in: query
+                  name: limit
+                  type: integer
+                  x-go-name: Limit
+            responses:
+                "200":
+                    description: Pharmacies - List success response
+                    schema:
+                        properties:
+                            data:
+                                properties:
+                                    records:
+                                        items:
+                                            $ref: '#/definitions/PharmaciesResponse'
                                         type: array
                                 type: object
                             meta:

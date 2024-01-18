@@ -8,7 +8,10 @@ import (
 	validation "github.com/itgelo/ozzo-validation"
 )
 
+// swagger:parameters MerchantRequest
 type MerchantRequest struct {
+	//Global Search
+	// in: query
 	Query   string `json:"q" schema:"q" binding:"omitempty"`
 	Fields  string `json:"fields" schema:"fields" binding:"omitempty"`
 	PID     string `json:"pid" schema:"pid"`
@@ -135,6 +138,46 @@ func (req MerchantProductRequest) DefaultPagination() MerchantProductRequest {
 	if req.Page == 0 {
 		req.Page = 1
 	}
+	return req
+}
+
+// swagger:parameters PharmaciesRequest
+type PharmaciesRequest struct {
+	//Global Search
+	// in: query
+	Query   string `json:"q" schema:"q" binding:"omitempty"`
+	Fields  string `json:"fields" schema:"fields" binding:"omitempty"`
+	StoreID int    `json:"store_id" schema:"store_id" binding:"omitempty"`
+	Store   string `json:"store" schema:"store" binding:"omitempty"`
+	Sort    string `json:"sort" schema:"sort" binding:"omitempty"`
+	Dir     string `json:"dir" schema:"dir" binding:"omitempty"`
+	Page    int    `json:"page" schema:"page" binding:"omitempty"`
+	Limit   int    `json:"limit" schema:"limit" binding:"omitempty"`
+}
+
+func (req PharmaciesRequest) ToString() string {
+	return fmt.Sprintf("%s-%s-%d-%d-%d", //nolint:govet
+		req.Query, req.Fields, req.StoreID, req.Page, req.Limit)
+}
+
+func (req PharmaciesRequest) DefaultPagination() PharmaciesRequest {
+	if req.Limit == 0 {
+		req.Limit = base.PAGINATION_MIN_LIMIT
+	}
+	if req.Limit > base.PAGINATION_MAX_LIMIT {
+		req.Limit = base.PAGINATION_MAX_LIMIT
+	}
+
+	// Default page 1
+	if req.Page == 0 {
+		req.Page = 1
+	}
+
+	// default storeID
+	if req.StoreID == 0 {
+		req.StoreID = 1
+	}
+
 	return req
 }
 

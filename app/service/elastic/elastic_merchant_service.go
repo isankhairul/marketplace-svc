@@ -26,6 +26,7 @@ type ElasticMerchantService interface {
 	Detail(ctx context.Context, input requestelastic.MerchantDetailRequest) (map[string]interface{}, message.Message, error)
 	SearchByZipcode(ctx context.Context, input requestelastic.MerchantZipcodeRequest) ([]map[string]interface{}, base.Pagination, message.Message, error)
 	SearchMerchantProduct(ctx context.Context, cfg *config.KalcareAPI, input requestelastic.MerchantProductRequest) ([]responseelastic.MerchantProductResponse, base.Pagination, message.Message, error)
+	SearchPharmacies(ctx context.Context, input requestelastic.PharmaciesRequest) ([]responseelastic.PharmaciesResponse, base.Pagination, message.Message, error)
 }
 
 type elasticMerchantServiceImpl struct {
@@ -538,6 +539,7 @@ func (s elasticMerchantServiceImpl) buildQuerySearch(input requestelastic.Mercha
 func (s elasticMerchantServiceImpl) defaultFields() []string {
 	return []string{
 		"id",
+		"uid",
 		"code",
 		"name",
 		"slug",
@@ -1154,4 +1156,144 @@ func (s elasticMerchantServiceImpl) SearchByZipcode(ctx context.Context, input r
 	}
 
 	return merchantResponse, pagination, msg, nil
+}
+
+// swagger:operation GET /pharmacies Merchants PharmaciesRequest
+// Pharmacies - List
+//
+// ---
+// tags:
+//   - "Merchants"
+//
+// security:
+// - Bearer: []
+// responses:
+//
+//	  '200':
+//		   description: Pharmacies - List success response
+//		   schema:
+//		       properties:
+//		           meta:
+//		               $ref: '#/definitions/MetaResponse'
+//		           data:
+//		               type: object
+//		               properties:
+//		                   records:
+//		                       type: array
+//		                       items:
+//		                           $ref: '#/definitions/PharmaciesResponse'
+func (s elasticMerchantServiceImpl) SearchPharmacies(ctx context.Context, input requestelastic.PharmaciesRequest) ([]responseelastic.PharmaciesResponse, base.Pagination, message.Message, error) {
+	var pharmaciesResponse []map[string]interface{}
+	var newPharmaciesResponse []responseelastic.PharmaciesResponse
+	var pagination base.Pagination
+	msg := message.SuccessMsg
+	// set default storeID
+	if input.StoreID == 0 {
+		input.StoreID = 1
+	}
+
+	params := s.buildQuerySearchPharmacies(input)
+
+	indexName, err := s.getIndexName()
+	if err != nil {
+		return newPharmaciesResponse, pagination, message.ErrNoIndexName, err
+	}
+
+	resp, err := s.elasticClient.Search(context.Background(), indexName, params)
+	if err != nil {
+		s.logger.Error(errors.New("error request elastic: " + err.Error()))
+		return newPharmaciesResponse, pagination, message.ErrES, err
+	}
+
+	// requested fields
+	arrFields := s.defaultFields()
+	if input.Fields != "" {
+		fields := util.StringExplode(input.Fields, ",")
+		arrFields = append(arrFields, fields...)
+	}
+
+	var responseElastic responseelastic.SearchResponse
+	_ = json.NewDecoder(resp.Body).Decode(&responseElastic)
+	pharmaciesResponse = s.transformSearch(responseElastic, arrFields)
+	newPharmaciesResponse = s.transformResponse(pharmaciesResponse)
+	pagination = s.elasticClient.Pagination(responseElastic, input.Page, input.Limit)
+
+	return newPharmaciesResponse, pagination, msg, nil
+}
+
+func (s elasticMerchantServiceImpl) buildQuerySearchPharmacies(input requestelastic.PharmaciesRequest) map[string]interface{} {
+	queryArray := map[string]interface{}{}
+
+	// create query bool
+	if input.Query != "" {
+		queryArray["bool"] = map[string]interface{}{
+			"must": map[string]interface{}{
+				"match_phrase_prefix": map[string]string{
+					"name": strings.Trim(input.Query, ""),
+				},
+			},
+		}
+	} else {
+		queryArray["bool"] = map[string]interface{}{
+			"must": map[string]interface{}{
+				"match_all": map[string]interface{}{},
+			},
+		}
+	}
+
+	// default filter status
+	filters := []map[string]interface{}{
+		{
+			"term": map[string]interface{}{
+				"is_pharmacy": 1,
+			},
+		},
+		{
+			"term": map[string]interface{}{
+				"status": 1,
+			},
+		},
+	}
+	queryArray["bool"].(map[string]interface{})["filter"] = filters
+	// end filter
+
+	// sort
+	fieldSort := "created_at"
+	directionSort := "desc"
+	if input.Dir != "" {
+		directionSort = input.Dir
+	}
+	if input.Sort != "" {
+		switch input.Sort {
+		case "name":
+			fieldSort = "name.raw"
+		case "rating":
+			fieldSort = "rating"
+		case "relevance":
+			fieldSort = "_score"
+		}
+	}
+	querySort := map[string]string{fieldSort: directionSort}
+
+	// pagination
+	from := (input.Page - 1) * input.Limit
+
+	params := map[string]interface{}{
+		"query": queryArray,
+		"from":  from,
+		"size":  input.Limit,
+		"sort":  querySort,
+	}
+
+	return params
+}
+
+func (s elasticMerchantServiceImpl) transformResponse(response []map[string]interface{}) []responseelastic.PharmaciesResponse {
+	resp := []responseelastic.PharmaciesResponse{}
+	for _, val := range response {
+		data := responseelastic.NewPharmaciesResponse(val)
+		resp = append(resp, *data)
+	}
+
+	return resp
 }
