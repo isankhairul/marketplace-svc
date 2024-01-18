@@ -1258,8 +1258,8 @@ func (s elasticMerchantServiceImpl) buildQuerySearchPharmacies(input requestelas
 	// end filter
 
 	// sort
-	fieldSort := "created_at"
-	directionSort := "desc"
+	fieldSort := "name.raw"
+	directionSort := "asc"
 	if input.Dir != "" {
 		directionSort = input.Dir
 	}
