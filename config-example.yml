@@ -4,7 +4,7 @@ database:
   host: db-marketplace.klikdokter-stg.int
   port: 5432
   username: marketplace_user
-  password: 
+  password: xxxxxxxxxxxxxxxxx
   dbname: marketplace
   schemaname: public
   logger:
@@ -21,8 +21,8 @@ redis-database:
   default-expiry:
 
 kafka:
-  bootstrap-servers: 172.22.199.109:9092
-  prefix-topic: local-mp
+  bootstrap-servers: kafka.klikdokter-stg.int:9092
+  prefix-topic: stg-mp
   auto-offset: beginning
   max-pool-interval: 600000
 
@@ -42,43 +42,36 @@ server:
 elastic:
   host: http://elasticsearch-marketplace.klikdokter-stg.int:9200
   username: marketplace_api
-  password: ooh9enoy4tieJaiz1Fei
-  default-store-id: 1
-  default-customer-group: 4
-  aggs-size: 11000
-  max-limit: 6000
+  password: xxxxxxxxxxxxxxxxx
   index:
     index-product-autocomplete : product
     index-merchant : merchant
     index-product-store : staging-2023-product-store
     index-merchants : staging-merchants
-    index-merchants-zone : staging-merchants-zone
-    index-category-store : staging-category-store
-    index-category-tree : staging-category-tree
+    index-merchants-zone : staging-merchants_zone
+    index-category-store : staging-category_store
+    index-category-tree : staging-category_tree
     index-brands : staging-brands
     index-cities : staging-cities
     index-order : staging-order
-    index-order-draft : staging-order-draft
-    index-order-history : staging-order-history
+    index-order-draft : staging-order_draft
+    index-order-history : staging-order_history
     index-fds-blacklist: fds-blacklist
     index-fds-rule: fds-rule
     index-wishlist : staging-wishlist
-    index-payment-method : staging-payment-method
+    index-payment-method : staging-payment_method
     index-discussions : discussions
     index-discussions-merchant : discussions-merchant
-    index-events-reguler : staging-events-reguler
-    index-events-special : staging-events-special
-    index-events-category : staging-events-category
     index-location : staging-location
     index-banners : staging-banners
-    index-merchant-product-rating-summary : staging-merchant-product-rating-summary
+    index-merchant-product-rating-summary : staging-merchant_product_rating_summary
     index-voucher : staging-sales-voucher
     index-provinces : staging-provinces
     index-districts : staging-districts
     index-subdistricts : staging-subdistricts
     index-postalcodes : staging-postalcodes
-    index-products-flat : staging-product_flat
-    index-merchants-flat : staging-merchant_flat
+    index-products-flat: staging-product_flat
+    index-merchants-flat: staging-merchant_flat
 
 security:
   jwt:
@@ -95,7 +88,7 @@ security:
 kalcare-api:
   server: https://kd-api.medkomtek-stg.com/mp/v3
   endpoint-auth: /auth/cms
-  endpoint-queue: /temp-order-status-queue
+  endpoint-queue: /temp_order_status_queue
   endpoint-webhook: /registered-webhook
   user-cred:
   pass-cred:
@@ -107,8 +100,16 @@ kalcare-api:
 
 micro-service:
   base-url: https://api.medkomtek.net/eks-micro-service
-  api-key: TUfDhxqRXRV6cyAmvrSj9q2GCdTMrPKPgFTSvQ7VUB8UBZ3LzJ
+  api-key: xxxxxxxxxxxxxxxxx
   sms-path-url: /queue/job
+
+sentry:
+  is-active: false
+  dsn: 
+  enable-tracing: false
+  trace-rate: 1.0
+  environment: "staging"
+  repanic: false
 
 icons:
   info: "https://s3-publishing-cmn-svc-prd.s3.ap-southeast-1.amazonaws.com/assets/icon/klikmedis/notification/lonceng.svg"
