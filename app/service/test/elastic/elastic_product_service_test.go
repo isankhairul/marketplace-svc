@@ -36,7 +36,7 @@ var productFlatRepo = &repository_mock.ProductFlatRepository{Mock: mock.Mock{}}
 var baseElasticRepo = &repository_mock.ElasticClient{Mock: mock.Mock{}}
 
 func init() {
-	filename := "config-prd"
+	filename := "config-example"
 	cfg := config.Init(config.WithConfigPath("../../../../"), config.WithConfigFilename(&filename))
 	lg, _ = logger.NewLogger(logger.NewGoKitLog(&logger.LogConfig{}), "test")
 	svcProduct = elasticservice.NewElasticProductService(*cfg, lg, baseRepo, productFlatRepo, baseElasticRepo)
