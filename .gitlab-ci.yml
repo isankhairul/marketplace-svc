@@ -15,9 +15,8 @@ go-test:
     - echo "machine gitlab.klik.doctor login $GITLAB_USER password $GITLAB_PASSWORD" > /root/.netrc
     - chmod 600 /root/.netrc
     - export GOPRIVATE=gitlab.klik.doctor
-    - export GOPRIVATE=gitlab.klik.doctor
-    - export CGO_CFLAGS="-D_LARGEFILE64_SOURCE"
-    - go test -v ./app/service/test/...
+    - go mod tidy && go mod vendor
+    - GO111MODULE=on CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go test -v ./app/service/test/...
   allow_failure: true
   rules:
     - if: '$CI_COMMIT_BRANCH == "release" || $CI_COMMIT_BRANCH == "develop"'
