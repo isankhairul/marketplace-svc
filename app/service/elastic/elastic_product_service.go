@@ -270,7 +270,7 @@ func (s elasticProductServiceImpl) buildQuerySearch(input requestelastic.Product
 			"must": []interface{}{
 				map[string]interface{}{
 					"match_phrase_prefix": map[string]interface{}{
-						"completion_terms": map[string]interface{}{
+						"name": map[string]interface{}{
 							"query": input.Query,
 						},
 					},

@@ -2,7 +2,6 @@ package elasticservice
 
 import (
 	"context"
-	"fmt"
 	"marketplace-svc/app"
 	"marketplace-svc/app/model/base"
 	requestelastic "marketplace-svc/app/model/request/elastic"
@@ -10,10 +9,8 @@ import (
 	elasticservice "marketplace-svc/app/service/elastic"
 	"marketplace-svc/helper/config"
 	"marketplace-svc/helper/message"
-	"strings"
 	"testing"
 
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"gitlab.klik.doctor/platform/go-pkg/dapr/logger"
 )
@@ -27,38 +24,12 @@ func (m *mockElasticMerchantService) SearchMerchantProduct(ctx context.Context, 
 var svcMerchant elasticservice.ElasticMerchantService
 
 func init() {
-	// loadConfig()
 	// cfg := config.Init()
 	lg, _ = logger.NewLogger(logger.NewGoKitLog(&logger.LogConfig{}), "")
 	cfg := config.Config{}
 	app := &app.Infra{DB: nil, Log: lg, Config: &config.Config{}}
 	svcMerchant = elasticservice.NewElasticMerchantService(app, cfg, lg, baseRepo, baseElasticRepo)
 	// ctx = context.Background()
-}
-
-func loadConfig() {
-	// Load configuration
-	viper.SetConfigType("yaml")
-	var profile string = "prd"
-	// if os.Getenv("KD_ENV") != "" {
-	//    profile = "prd"
-	// }
-
-	var configFileName []string
-	configFileName = append(configFileName, "config-")
-	configFileName = append(configFileName, profile)
-
-	viper.SetConfigName(strings.Join(configFileName, ""))
-	viper.AddConfigPath("../../../../")
-	err := viper.ReadInConfig() // Find and read the config file
-	if err != nil {             // Handle errors reading the config file
-		panic(err)
-	}
-
-	// override with env vars
-	viper.AutomaticEnv()
-	viper.SetEnvPrefix("KD")
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 }
 
 func TestSearchMerchantProductSuccess(t *testing.T) {
@@ -319,187 +290,187 @@ func TestSearchMerchantProductSuccess(t *testing.T) {
 	// assert.Equal(t, 1, len(merchantProduct))
 }
 
-func buildQuerySearchMerchantProduct(input requestelastic.MerchantProductRequest, productSkus []map[string]interface{}, lat float64, lon float64, orderBy string) map[string]interface{} {
-	productVariables := make(map[string]string)
+// func buildQuerySearchMerchantProduct(input requestelastic.MerchantProductRequest, productSkus []map[string]interface{}, lat float64, lon float64, orderBy string) map[string]interface{} {
+// 	productVariables := make(map[string]string)
 
-	for i, sku := range productSkus {
-		productVariables[fmt.Sprintf("productSku%d", i+1)] = sku["sku"].(string)
-		productVariables[fmt.Sprintf("product%d", i+1)] = fmt.Sprintf("product_%s", sku["sku"].(string))
-		productVariables[fmt.Sprintf("stock%d", i+1)] = fmt.Sprintf("%d", sku["stock"].(int))
-	}
+// 	for i, sku := range productSkus {
+// 		productVariables[fmt.Sprintf("productSku%d", i+1)] = sku["sku"].(string)
+// 		productVariables[fmt.Sprintf("product%d", i+1)] = fmt.Sprintf("product_%s", sku["sku"].(string))
+// 		productVariables[fmt.Sprintf("stock%d", i+1)] = fmt.Sprintf("%d", sku["stock"].(int))
+// 	}
 
-	// pagination
-	// from := (input.Page - 1) * input.Limit
+// 	// pagination
+// 	// from := (input.Page - 1) * input.Limit
 
-	params := map[string]interface{}{
-		"query": map[string]interface{}{
-			"bool": map[string]interface{}{
-				"should": func() []map[string]interface{} {
-					shouldClauses := make([]map[string]interface{}, len(productSkus))
+// 	params := map[string]interface{}{
+// 		"query": map[string]interface{}{
+// 			"bool": map[string]interface{}{
+// 				"should": func() []map[string]interface{} {
+// 					shouldClauses := make([]map[string]interface{}, len(productSkus))
 
-					for i, sku := range productSkus {
-						termClause := map[string]interface{}{
-							"term": map[string]interface{}{
-								"product_sku": sku["sku"],
-							},
-						}
-						shouldClauses[i] = termClause
-					}
+// 					for i, sku := range productSkus {
+// 						termClause := map[string]interface{}{
+// 							"term": map[string]interface{}{
+// 								"product_sku": sku["sku"],
+// 							},
+// 						}
+// 						shouldClauses[i] = termClause
+// 					}
 
-					return shouldClauses
-				}(),
-				"must": []map[string]interface{}{
-					{
-						"term": map[string]interface{}{
-							"is_pharmacy": 1,
-						},
-					},
-					{
-						"term": map[string]interface{}{
-							"status": 1,
-						},
-					},
-				},
-			},
-		},
-		"aggs": map[string]interface{}{
-			"group_merchant": map[string]interface{}{
-				"terms": map[string]interface{}{
-					"field": "merchant_id",
-					"size":  10000,
-				},
-				"aggs": func() map[string]interface{} {
-					aggs := make(map[string]interface{})
+// 					return shouldClauses
+// 				}(),
+// 				"must": []map[string]interface{}{
+// 					{
+// 						"term": map[string]interface{}{
+// 							"is_pharmacy": 1,
+// 						},
+// 					},
+// 					{
+// 						"term": map[string]interface{}{
+// 							"status": 1,
+// 						},
+// 					},
+// 				},
+// 			},
+// 		},
+// 		"aggs": map[string]interface{}{
+// 			"group_merchant": map[string]interface{}{
+// 				"terms": map[string]interface{}{
+// 					"field": "merchant_id",
+// 					"size":  10000,
+// 				},
+// 				"aggs": func() map[string]interface{} {
+// 					aggs := make(map[string]interface{})
 
-					for i, sku := range productSkus {
-						aggs[productVariables[fmt.Sprintf("product%d", i+1)]] = map[string]interface{}{
-							"sum": map[string]interface{}{
-								"script": map[string]interface{}{
-									"lang": "painless",
-									"source": fmt.Sprintf("(doc['product_sku'].value == '%s' && doc['stock'].value >= %s) ? 1 : 0",
-										sku["sku"], productVariables[fmt.Sprintf("stock%d", i+1)]),
-								},
-							},
-						}
-					}
+// 					for i, sku := range productSkus {
+// 						aggs[productVariables[fmt.Sprintf("product%d", i+1)]] = map[string]interface{}{
+// 							"sum": map[string]interface{}{
+// 								"script": map[string]interface{}{
+// 									"lang": "painless",
+// 									"source": fmt.Sprintf("(doc['product_sku'].value == '%s' && doc['stock'].value >= %s) ? 1 : 0",
+// 										sku["sku"], productVariables[fmt.Sprintf("stock%d", i+1)]),
+// 								},
+// 							},
+// 						}
+// 					}
 
-					var scriptParts []string
-					var scriptParts2 []string
-					var bucketsPathKeys []string
+// 					var scriptParts []string
+// 					var scriptParts2 []string
+// 					var bucketsPathKeys []string
 
-					for _, variable := range productVariables {
-						if strings.HasPrefix(variable, "product_") {
-							scriptParts = append(scriptParts, fmt.Sprintf("params.%s >= 1", variable))
-							scriptParts2 = append(scriptParts2, fmt.Sprintf("params.%s", variable))
-							bucketsPathKeys = append(bucketsPathKeys, variable)
-						}
-					}
+// 					for _, variable := range productVariables {
+// 						if strings.HasPrefix(variable, "product_") {
+// 							scriptParts = append(scriptParts, fmt.Sprintf("params.%s >= 1", variable))
+// 							scriptParts2 = append(scriptParts2, fmt.Sprintf("params.%s", variable))
+// 							bucketsPathKeys = append(bucketsPathKeys, variable)
+// 						}
+// 					}
 
-					script := strings.Join(scriptParts, " || ")
-					script2 := strings.Join(scriptParts2, " + ")
+// 					script := strings.Join(scriptParts, " || ")
+// 					script2 := strings.Join(scriptParts2, " + ")
 
-					bucketsPath := make(map[string]string)
-					for _, key := range bucketsPathKeys {
-						bucketsPath[key] = key
-					}
+// 					bucketsPath := make(map[string]string)
+// 					for _, key := range bucketsPathKeys {
+// 						bucketsPath[key] = key
+// 					}
 
-					aggs["filter_buckets"] = map[string]interface{}{
-						"bucket_selector": map[string]interface{}{
-							"buckets_path": bucketsPath,
-							"script":       script,
-						},
-					}
+// 					aggs["filter_buckets"] = map[string]interface{}{
+// 						"bucket_selector": map[string]interface{}{
+// 							"buckets_path": bucketsPath,
+// 							"script":       script,
+// 						},
+// 					}
 
-					aggs["data"] = map[string]interface{}{
-						"top_hits": map[string]interface{}{
-							"size": len(input.Body.Items),
-						},
-					}
+// 					aggs["data"] = map[string]interface{}{
+// 						"top_hits": map[string]interface{}{
+// 							"size": len(input.Body.Items),
+// 						},
+// 					}
 
-					aggs["fulfill"] = map[string]interface{}{
-						"bucket_script": map[string]interface{}{
-							"buckets_path": bucketsPath,
-							"script":       script2,
-						},
-					}
+// 					aggs["fulfill"] = map[string]interface{}{
+// 						"bucket_script": map[string]interface{}{
+// 							"buckets_path": bucketsPath,
+// 							"script":       script2,
+// 						},
+// 					}
 
-					aggs["distance"] = map[string]interface{}{
-						"min": map[string]interface{}{
-							"script": map[string]interface{}{
-								"lang":   "painless",
-								"source": fmt.Sprintf("Math.round(doc['location'].arcDistance(%f, %f) * 0.001 * 10.0) / 10.0", lat, lon),
-							},
-						},
-					}
+// 					aggs["distance"] = map[string]interface{}{
+// 						"min": map[string]interface{}{
+// 							"script": map[string]interface{}{
+// 								"lang":   "painless",
+// 								"source": fmt.Sprintf("Math.round(doc['location'].arcDistance(%f, %f) * 0.001 * 10.0) / 10.0", lat, lon),
+// 							},
+// 						},
+// 					}
 
-					if orderBy == "distance" {
-						aggs["sort"] = map[string]interface{}{
-							"bucket_sort": map[string]interface{}{
-								"sort": []map[string]interface{}{
-									{
-										"distance.value": map[string]interface{}{
-											"order": "asc",
-										},
-									},
-								},
-								"from": 0,
-								"size": input.Limit,
-							},
-						}
-					} else if orderBy == "fulfill" {
-						aggs["sort"] = map[string]interface{}{
-							"bucket_sort": map[string]interface{}{
-								"sort": []map[string]interface{}{
-									{
-										"fulfill.value": map[string]interface{}{
-											"order": "desc",
-										},
-									},
-								},
-								"from": 0,
-								"size": input.Limit,
-							},
-						}
-					} else if orderBy == "recommendation" {
-						aggs["sort"] = map[string]interface{}{
-							"bucket_sort": map[string]interface{}{
-								"sort": []map[string]interface{}{
-									{
-										"fulfill.value": map[string]interface{}{
-											"order": "desc",
-										},
-									},
-									{
-										"distance.value": map[string]interface{}{
-											"order": "asc",
-										},
-									},
-								},
-								"from": 0,
-								"size": input.Limit,
-							},
-						}
-					}
+// 					if orderBy == "distance" {
+// 						aggs["sort"] = map[string]interface{}{
+// 							"bucket_sort": map[string]interface{}{
+// 								"sort": []map[string]interface{}{
+// 									{
+// 										"distance.value": map[string]interface{}{
+// 											"order": "asc",
+// 										},
+// 									},
+// 								},
+// 								"from": 0,
+// 								"size": input.Limit,
+// 							},
+// 						}
+// 					} else if orderBy == "fulfill" {
+// 						aggs["sort"] = map[string]interface{}{
+// 							"bucket_sort": map[string]interface{}{
+// 								"sort": []map[string]interface{}{
+// 									{
+// 										"fulfill.value": map[string]interface{}{
+// 											"order": "desc",
+// 										},
+// 									},
+// 								},
+// 								"from": 0,
+// 								"size": input.Limit,
+// 							},
+// 						}
+// 					} else if orderBy == "recommendation" {
+// 						aggs["sort"] = map[string]interface{}{
+// 							"bucket_sort": map[string]interface{}{
+// 								"sort": []map[string]interface{}{
+// 									{
+// 										"fulfill.value": map[string]interface{}{
+// 											"order": "desc",
+// 										},
+// 									},
+// 									{
+// 										"distance.value": map[string]interface{}{
+// 											"order": "asc",
+// 										},
+// 									},
+// 								},
+// 								"from": 0,
+// 								"size": input.Limit,
+// 							},
+// 						}
+// 					}
 
-					return aggs
-				}(),
-			},
-		},
-		"sort": []map[string]interface{}{
-			{
-				"_geo_distance": map[string]interface{}{
-					"location": map[string]interface{}{
-						"lat": lat,
-						"lon": lon,
-					},
-					"order": "desc",
-					"unit":  "km",
-					"mode":  "min",
-				},
-			},
-		},
-		"size": 0,
-	}
+// 					return aggs
+// 				}(),
+// 			},
+// 		},
+// 		"sort": []map[string]interface{}{
+// 			{
+// 				"_geo_distance": map[string]interface{}{
+// 					"location": map[string]interface{}{
+// 						"lat": lat,
+// 						"lon": lon,
+// 					},
+// 					"order": "desc",
+// 					"unit":  "km",
+// 					"mode":  "min",
+// 				},
+// 			},
+// 		},
+// 		"size": 0,
+// 	}
 
-	return params
-}
+// 	return params
+// }

@@ -59,6 +59,13 @@ func EsMerchantHttpHandler(s elasticservice.ElasticMerchantService, app *app.Inf
 		options...,
 	))
 
+	pr.Methods(http.MethodGet).Path(app.URLWithPrefix("pharmacies/")).Handler(httpTransport.NewServer(
+		ep.SearchPharmacies,
+		decodeRequestESPharmacies,
+		encoder.EncodeResponseHTTP,
+		options...,
+	))
+
 	return pr
 }
 
@@ -145,6 +152,24 @@ func decodeRequestESMerchantProduct(ctx context.Context, r *http.Request) (rqst 
 		return nil, err
 	}
 	req.Token = token
+
+	// Default and max LIMIT
+	req = req.DefaultPagination()
+
+	return req, nil
+}
+
+func decodeRequestESPharmacies(ctx context.Context, r *http.Request) (rqst interface{}, err error) {
+	var req requestelastic.PharmaciesRequest
+	if err := r.ParseForm(); err != nil {
+		return nil, err
+	}
+
+	schDecoder := schema.NewDecoder()
+	schDecoder.IgnoreUnknownKeys(true)
+	if err = schDecoder.Decode(&req, r.Form); err != nil {
+		return nil, err
+	}
 
 	// Default and max LIMIT
 	req = req.DefaultPagination()

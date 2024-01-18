@@ -17,6 +17,7 @@ type EsMerchantEndpoint struct {
 	Detail                endpoint.Endpoint
 	SearchByZipcode       endpoint.Endpoint
 	SearchMerchantProduct endpoint.Endpoint
+	SearchPharmacies      endpoint.Endpoint
 }
 
 func MakeEsMerchantEndpoints(s elasticservice.ElasticMerchantService, cfg *config.Config) EsMerchantEndpoint {
@@ -25,6 +26,7 @@ func MakeEsMerchantEndpoints(s elasticservice.ElasticMerchantService, cfg *confi
 		Detail:                makeDetailMerchant(s),
 		SearchByZipcode:       makeSearchMerchantByZipcode(s),
 		SearchMerchantProduct: makeSearchMerchantProduct(s, cfg),
+		SearchPharmacies:      makeSearchPharmacies(s),
 	}
 }
 
@@ -134,5 +136,30 @@ func makeSearchMerchantProduct(s elasticservice.ElasticMerchantService, cfg *con
 		}
 		// pagination := response["page"].(base.Pagination)
 		return base.SetHttpResponse(ctx, msg, response["result"], nil), nil
+	}
+}
+
+func makeSearchPharmacies(s elasticservice.ElasticMerchantService) endpoint.Endpoint {
+	return func(ctx context.Context, req interface{}) (resp interface{}, err error) {
+		request := req.(requestelastic.PharmaciesRequest)
+		v, _, _ := requestEsGroup.Do("SearchMerchantPharmacies_"+request.ToString(), func() (interface{}, error) {
+			result, page, msg, err := s.SearchPharmacies(ctx, request)
+			response := map[string]interface{}{
+				"result": result,
+				"page":   page,
+				"msg":    msg,
+				"err":    err,
+			}
+			return response, nil
+		})
+		response := v.(map[string]interface{})
+		msg := response["msg"].(message.Message)
+
+		//result, page, msg, err := s.Search(ctx, req.(requestelastic.MerchantRequest))
+		if msg != message.SuccessMsg {
+			return base.SetErrorResponse(ctx, msg, err), nil
+		}
+		pagination := response["page"].(base.Pagination)
+		return base.SetHttpResponse(ctx, msg, response["result"], &pagination), nil
 	}
 }

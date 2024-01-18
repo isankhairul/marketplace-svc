@@ -143,3 +143,18 @@ type Coordinates struct {
 	Lat float64
 	Lon float64
 }
+
+// swagger:model PharmaciesResponse
+type PharmaciesResponse struct {
+	UID  string `json:"uid"`
+	Code string `json:"code"`
+	Name string `json:"name"`
+}
+
+func NewPharmaciesResponse(val map[string]interface{}) *PharmaciesResponse {
+	return &PharmaciesResponse{
+		UID:  getESStringValue(val["uid"]),
+		Code: getESStringValue(val["code"]),
+		Name: getESStringValue(val["name"]),
+	}
+}
