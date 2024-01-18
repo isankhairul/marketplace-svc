@@ -16,7 +16,7 @@ go-test:
     - chmod 600 /root/.netrc
     - export GOPRIVATE=gitlab.klik.doctor
     - go mod tidy && go mod vendor
-    - GO111MODULE=on CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go test -v ./app/service/test/...
+    - GO111MODULE=on CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go test -v -tags musl ./app/service/test/...
   allow_failure: true
   rules:
     - if: '$CI_COMMIT_BRANCH == "release" || $CI_COMMIT_BRANCH == "develop"'
