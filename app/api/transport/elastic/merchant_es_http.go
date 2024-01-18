@@ -59,7 +59,7 @@ func EsMerchantHttpHandler(s elasticservice.ElasticMerchantService, app *app.Inf
 		options...,
 	))
 
-	pr.Methods(http.MethodGet).Path(app.URLWithPrefix("pharmacies/")).Handler(httpTransport.NewServer(
+	pr.Methods(http.MethodGet).Path(app.URLWithPrefix("pharmacies")).Handler(httpTransport.NewServer(
 		ep.SearchPharmacies,
 		decodeRequestESPharmacies,
 		encoder.EncodeResponseHTTP,
