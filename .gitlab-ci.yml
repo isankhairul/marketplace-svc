@@ -11,7 +11,7 @@ go-test:
   image:
     name: $CI_REGISTRY/base-os/golang:1.21.1-alpine
   script:
-    - apk --no-cache add make git gcc libtool musl-dev ca-certificates dumb-init openssl
+    - apk --no-cache add make git gcc libtool musl-dev ca-certificates dumb-init openssl libc-dev musl-dev
     - echo "machine gitlab.klik.doctor login $GITLAB_USER password $GITLAB_PASSWORD" > /root/.netrc
     - chmod 600 /root/.netrc
     - export GOPRIVATE=gitlab.klik.doctor
