@@ -25,3 +25,7 @@ type Store struct {
 	ExcludePaymentInfo   int       `json:"exclude_payment_info"`
 	ExcludeNewQuote      int       `json:"exclude_new_quote"`
 }
+
+func (s Store) TableName() string {
+	return "store"
+}

@@ -21,3 +21,7 @@ type Brand struct {
 	MetaDescription  string    `json:"meta_description"`
 	ShowOfficial     int       `json:"show_official"`
 }
+
+func (b Brand) TableName() string {
+	return "brand"
+}

@@ -9,7 +9,6 @@ import (
 	requestelastic "marketplace-svc/app/model/request/elastic"
 	responseelastic "marketplace-svc/app/model/response/elastic"
 	"marketplace-svc/app/repository"
-	quoterepository "marketplace-svc/app/repository/quote"
 	"marketplace-svc/helper/config"
 	"marketplace-svc/helper/elastic"
 	"marketplace-svc/helper/message"
@@ -42,12 +41,6 @@ func (s elasticBannerServiceImpl) Search(ctx context.Context, input requestelast
 	var bannerResponse []map[string]interface{}
 	var pagination base.Pagination
 	msg := message.SuccessMsg
-
-	dbc := repository.NewDBContext(s.baseRepo.GetDB(), ctx)
-	quoteRepository := quoterepository.NewOrderQuoteRepository(s.baseRepo)
-	dataQuote, _, _ := quoteRepository.FindByParams(dbc, map[string]interface{}{}, 10, 0)
-	jsonDataQuote, _ := json.Marshal(dataQuote)
-	fmt.Println(string(jsonDataQuote))
 
 	indexName, err := s.getIndexName()
 	if err != nil {

@@ -41,3 +41,7 @@ type MerchantFlat struct {
 	Latitude          string    `json:"latitude"`
 	Longitude         string    `json:"longitude"`
 }
+
+func (m MerchantFlat) TableName() string {
+	return "merchant_flat_"
+}

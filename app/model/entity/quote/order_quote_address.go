@@ -10,8 +10,8 @@ import (
 )
 
 type Point struct {
-	Latitude  float64 `json:"latitude"`
-	Longitude float64 `json:"longitude"`
+	Latitude  float64 `json:"latitude,omitempty"`
+	Longitude float64 `json:"longitude,omitempty"`
 }
 
 func (p Point) Value() (driver.Value, error) {
@@ -39,36 +39,36 @@ func (p Point) Scan(val interface{}) (err error) {
 }
 
 type OrderQuoteAddress struct {
-	ID                    int64     `json:"id"`
-	QuoteID               int64     `json:"quote_id"`
-	ContactID             string    `json:"contact_id"`
-	SaveInAddressBook     bool      `json:"save_in_address_book"`
-	CustomerAddressID     int       `json:"customer_address_id"`
-	AddressTypeID         int       `json:"address_type_id"`
-	Email                 string    `json:"email"`
-	ReceiverName          string    `json:"receiver_name"`
-	Street                string    `json:"street"`
-	CountryID             int       `json:"country_id"`
-	ProvinceID            int       `json:"province_id"`
-	CityID                int       `json:"city_id"`
-	DistrictID            int       `json:"district_id"`
-	SubdistrictID         int       `json:"subdistrict_id"`
-	Zipcode               string    `json:"zipcode"`
-	PhoneNumber           string    `json:"phone_number"`
-	CreatedAt             time.Time `json:"created_at"`
-	UpdatedAt             time.Time `json:"updated_at"`
-	CustomerNotes         string    `json:"customer_notes"`
-	Title                 string    `json:"title"`
-	PostcodeID            int       `json:"postcode_id"`
-	DiscountDescription   string    `json:"discount_description"`
-	BonusPointDescription string    `json:"bonus_point_description"`
-	Latitude              float64   `json:"latitude"`
-	Longitude             float64   `json:"longitude"`
-	Coordinate            Point     `json:"coordinate"`
-	Province              string    `json:"province"`
-	City                  string    `json:"city"`
-	District              string    `json:"district"`
-	Subdistrict           string    `json:"subdistrict"`
+	ID                    int64     `json:"id,omitempty"`
+	QuoteID               int64     `json:"quote_id,omitempty"`
+	ContactID             string    `json:"contact_id,omitempty"`
+	SaveInAddressBook     bool      `json:"save_in_address_book,omitempty"`
+	CustomerAddressID     int       `json:"customer_address_id,omitempty"`
+	AddressTypeID         int       `json:"address_type_id,omitempty"`
+	Email                 string    `json:"email,omitempty"`
+	ReceiverName          string    `json:"receiver_name,omitempty"`
+	Street                string    `json:"street,omitempty"`
+	CountryID             int       `json:"country_id,omitempty"`
+	ProvinceID            int       `json:"province_id,omitempty"`
+	CityID                int       `json:"city_id,omitempty"`
+	DistrictID            int       `json:"district_id,omitempty"`
+	SubdistrictID         int       `json:"subdistrict_id,omitempty"`
+	Zipcode               string    `json:"zipcode,omitempty"`
+	PhoneNumber           string    `json:"phone_number,omitempty"`
+	CreatedAt             time.Time `json:"created_at,omitempty"`
+	UpdatedAt             time.Time `json:"updated_at,omitempty"`
+	CustomerNotes         string    `json:"customer_notes,omitempty"`
+	Title                 string    `json:"title,omitempty"`
+	PostcodeID            int       `json:"postcode_id,omitempty"`
+	DiscountDescription   string    `json:"discount_description,omitempty"`
+	BonusPointDescription string    `json:"bonus_point_description,omitempty"`
+	Latitude              float64   `json:"latitude,omitempty"`
+	Longitude             float64   `json:"longitude,omitempty"`
+	Coordinate            string    `json:"coordinate,omitempty"`
+	Province              string    `json:"province,omitempty"`
+	City                  string    `json:"city,omitempty"`
+	District              string    `json:"district,omitempty"`
+	Subdistrict           string    `json:"subdistrict,omitempty"`
 }
 
 func (o OrderQuoteAddress) TableName() string {

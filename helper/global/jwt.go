@@ -4,8 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/go-kit/kit/transport/http"
 	"marketplace-svc/helper/config"
 	"marketplace-svc/helper/message"
+	stdhttp "net/http"
+	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/go-kit/kit/auth/jwt"
@@ -40,6 +44,19 @@ type Access struct {
 	Roles []string `json:"roles"`
 }
 
+type JWTInfo struct {
+	ActorName     string `json:"-"`
+	ActorUID      string `json:"-"`
+	ActorAvatar   string `json:"-"`
+	ActorIDLegacy string `json:"-"`
+	Phone         string `json:"-"`
+	Topic         []int  `json:"-"`
+	Email         string `json:"-"`
+	ID            string `json:"-"`
+	IsVerified    bool   `json:"-"`
+	CustomerID    int64  `json:"-"`
+}
+
 func GetJWTInfoFromContext(ctx context.Context, cfg *config.JwtConfig) (*JWTPayload, error) {
 	if !cfg.SkipValidation {
 		return JWTInfoToStruct(fmt.Sprint(ctx.Value(jwt.JWTContextKey)))
@@ -66,4 +83,98 @@ func ExtractTokenFromAuthHeader(val string) (token string, ok bool) {
 	}
 
 	return authHeaderParts[1], true
+}
+
+func ExtractClaimsOnly(bearerToken string) (jwtgo.MapClaims, error) {
+	// checking empty bearer token
+	if bearerToken == "" {
+		return nil, errors.New("bearer Token is empty")
+	}
+
+	token, _ := jwtgo.ParseWithClaims(bearerToken, jwtgo.MapClaims{}, func(token *jwtgo.Token) (interface{}, error) {
+		return []byte(""), nil
+	})
+
+	// check valid bearer token with publishing jwt-login-secret
+	if token == nil {
+		return nil, errors.New("bearer Token is empty")
+	}
+
+	claims, ok := token.Claims.(jwtgo.MapClaims)
+	if !ok {
+		return nil, errors.New("failed casting to jwt MapClaims")
+	}
+
+	return claims, nil
+}
+
+func ExtractToken(bearerToken string) (*JWTInfo, error) {
+	// checking empty bearer token
+	if bearerToken == "" {
+		return nil, errors.New("bearer Token is empty")
+	}
+
+	var claimsJWT JWTInfo
+	mapClaims, errMapClaims := ExtractClaimsOnly(bearerToken)
+	if errMapClaims != nil {
+		return nil, errMapClaims
+	}
+
+	var claimID string
+	// handle ID if not string
+	if reflect.TypeOf(mapClaims["id"]).Kind() == reflect.Float64 {
+		claimID = strconv.Itoa(int(mapClaims["id"].(float64)))
+	} else {
+		claimID = mapClaims["id"].(string)
+	}
+	// check attribute avatar
+	avatar, ok := mapClaims["avatar"]
+	if !ok {
+		claimsJWT.ActorAvatar = ""
+	} else {
+		claimsJWT.ActorAvatar = fmt.Sprintf("%v", avatar)
+	}
+	claimsJWT.ActorName = fmt.Sprintf("%v", mapClaims["full_name"])
+	claimsJWT.ActorUID = fmt.Sprintf("%v", mapClaims["sub"])
+	claimsJWT.ActorIDLegacy = fmt.Sprintf("%v", mapClaims["user_id_legacy"])
+	claimsJWT.Phone = fmt.Sprintf("%v", mapClaims["phone"])
+	claimsJWT.Email = fmt.Sprintf("%v", mapClaims["email"])
+	claimsJWT.ID = fmt.Sprintf("%v", claimID)
+	intCustomerID, _ := strconv.ParseInt(claimsJWT.ID, 10, 64)
+	claimsJWT.CustomerID = intCustomerID
+
+	return &claimsJWT, nil
+}
+
+func GetContextTokenFromHTTP(ctx context.Context, r *stdhttp.Request) context.Context {
+	token, ok := ExtractTokenFromAuthHeader(r.Header.Get("Authorization"))
+	if !ok {
+		return ctx
+	}
+	payload, _ := ExtractToken(token)
+	ctx = r.Context()
+	ctx = context.WithValue(ctx, jwt.JWTContextKey, token)
+
+	return context.WithValue(ctx, jwt.JWTClaimsContextKey, payload)
+}
+
+func HTTPToContextJWTClaims() http.RequestFunc {
+	return func(ctx context.Context, r *stdhttp.Request) context.Context {
+		return GetContextTokenFromHTTP(ctx, r)
+	}
+}
+
+func HTTPHeaderToContext() http.RequestFunc {
+	return func(ctx context.Context, r *stdhttp.Request) context.Context {
+		ctx = GetContextTokenFromHTTP(ctx, r)
+
+		// get header device_id
+		deviceID := 1
+		headerDeviceID, err := strconv.ParseInt(r.Header.Get("device_id"), 10, 8)
+		if headerDeviceID != 0 && err == nil {
+			deviceID = int(headerDeviceID)
+		}
+		ctx = context.WithValue(ctx, "device_id", deviceID)
+		return ctx
+	}
 }
