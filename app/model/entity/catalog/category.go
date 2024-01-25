@@ -3,9 +3,9 @@ package entity
 import "time"
 
 type Category struct {
-	ID              int64     `json:"id"`
-	ParentID        int64     `json:"parent_id"`
-	StoreID         int64     `json:"store_id"`
+	ID              uint64    `json:"id"`
+	ParentID        uint64    `json:"parent_id"`
+	StoreID         uint64    `json:"store_id"`
 	Name            string    `json:"name"`
 	Description     string    `json:"description"`
 	MetaTitle       string    `json:"meta_title"`

@@ -6,9 +6,9 @@ import (
 )
 
 type OrderQuoteMerchant struct {
-	ID                       int64               `json:"id"`
-	QuoteID                  int64               `json:"quote_id"`
-	MerchantID               int64               `json:"merchant_id"`
+	ID                       uint64              `json:"id"`
+	QuoteID                  uint64              `json:"quote_id"`
+	MerchantID               uint64              `json:"merchant_id"`
 	CreatedAt                time.Time           `json:"created_at"`
 	UpdatedAt                time.Time           `json:"updated_at"`
 	MerchantGrandTotal       float64             `json:"merchant_grand_total"`
@@ -17,7 +17,7 @@ type OrderQuoteMerchant struct {
 	MerchantTotalWeight      float64             `json:"merchant_total_weight"`
 	MerchantTotalPointEarned float64             `json:"merchant_total_point_earned"`
 	MerchantNotes            string              `json:"merchant_notes"`
-	MerchantTypeID           int                 `json:"merchant_type_id"`
+	MerchantTypeID           uint64              `json:"merchant_type_id"`
 	Selected                 bool                `json:"selected"`
 	Redeem                   int                 `json:"redeem"`
 	MerchantTotalPointSpent  int                 `json:"merchant_total_point_spent"`

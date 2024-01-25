@@ -3,7 +3,7 @@ package entity
 import "time"
 
 type MerchantProduct struct {
-	ID                   int64                  `json:"id"`
+	ID                   uint64                 `json:"id"`
 	ProductSku           string                 `json:"product_sku"`
 	MerchantSku          string                 `json:"merchant_sku"`
 	Status               int                    `json:"status"`
@@ -14,8 +14,8 @@ type MerchantProduct struct {
 	ReservedStock        int                    `json:"reserved_stock"`
 	StockOnHand          int                    `json:"stock_on_hand"`
 	BufferStock          int                    `json:"buffer_stock"`
-	MerchantID           int                    `json:"merchant_id"`
-	ProductID            int                    `json:"product_id"`
+	MerchantID           uint64                 `json:"merchant_id"`
+	ProductID            uint64                 `json:"product_id"`
 	MaxPurchaseQty       int                    `json:"max_purchase_qty"`
 	ParentReservedStock  int                    `json:"parent_reserved_stock"`
 	MerchantIncludedItem bool                   `json:"merchant_included_item"`

@@ -3,7 +3,7 @@ package entity
 import "time"
 
 type PromotionCatalog struct {
-	ID                   int       `json:"id"`
+	ID                   uint64    `json:"id"`
 	Name                 string    `json:"name"`
 	Description          string    `json:"description"`
 	FromDate             time.Time `json:"from_date"`

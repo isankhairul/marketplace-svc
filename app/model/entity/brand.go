@@ -3,7 +3,7 @@ package entity
 import "time"
 
 type Brand struct {
-	ID               int64     `json:"id"`
+	ID               uint64    `json:"id"`
 	BrandCode        string    `json:"brand_code"`
 	BrandName        string    `json:"brand_name"`
 	ProductGroupKnID int       `json:"product_group_kn_id"`
@@ -11,7 +11,7 @@ type Brand struct {
 	KnsBrandID       int       `json:"kns_brand_id"`
 	KlaBrandID       int       `json:"kla_brand_id"`
 	PrincipalCode    string    `json:"principal_code"`
-	StoreID          int       `json:"store_id"`
+	StoreID          uint64    `json:"store_id"`
 	Image            string    `json:"image"`
 	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`

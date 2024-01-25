@@ -25,7 +25,7 @@ func (r *merchantProductRepository) FindFirstByParams(dbc *base.DBContext, filte
 
 	for key, v := range filter {
 		if key == "merchant_id" && v != "" {
-			query = query.Where("merchant_id = ?", v.(int64))
+			query = query.Where("merchant_id = ?", v.(uint64))
 		}
 		if key == "product_sku" && v != "" {
 			query = query.Where("product_sku = ?", v.(string))

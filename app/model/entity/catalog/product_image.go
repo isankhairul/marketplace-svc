@@ -1,7 +1,7 @@
 package entity
 
 type ProductImage struct {
-	ID             int64  `json:"id"`
+	ID             uint64 `json:"id"`
 	ProductID      int    `json:"product_id"`
 	Image          string `json:"image"`
 	ImageOriginal  string `json:"image_original"`

@@ -3,7 +3,7 @@ package entity
 import "time"
 
 type Merchant struct {
-	ID                       int64              `json:"id"`
+	ID                       uint64             `json:"id"`
 	MerchantCode             string             `json:"merchant_code"`
 	CreatedAt                time.Time          `json:"created_at"`
 	UpdatedAt                time.Time          `json:"updated_at"`
@@ -16,7 +16,7 @@ type Merchant struct {
 	SubdistrictID            int                `json:"subdistrict_id"`
 	PostalcodeID             int                `json:"postalcode_id"`
 	Email                    string             `json:"email"`
-	MerchantTypeID           int                `json:"merchant_type_id"`
+	MerchantTypeID           uint64             `json:"merchant_type_id"`
 	Image                    string             `json:"image"`
 	Slug                     string             `json:"slug"`
 	PhoneNumber              string             `json:"phone_number"`

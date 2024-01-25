@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"marketplace-svc/app"
 	"marketplace-svc/app/api/middleware"
+	"marketplace-svc/app/model/base"
 	entityquote "marketplace-svc/app/model/entity/quote"
 	responsequote "marketplace-svc/app/model/response/quote"
 	"marketplace-svc/app/repository"
 	repoquote "marketplace-svc/app/repository/quote"
 	"marketplace-svc/app/transform"
-	helperconst "marketplace-svc/helper/const"
 	"marketplace-svc/helper/message"
 	"strconv"
 )
@@ -33,7 +33,7 @@ func NewQuoteReceiptService(
 	br repository.BaseRepository,
 	quoteRepo repoquote.OrderQuoteRepository,
 ) QuoteReceiptService {
-	return &QuoteReceiptServiceImpl{infra, br, quoteRepo, helperconst.ORDER_TYPE_RECEIPT}
+	return &QuoteReceiptServiceImpl{infra, br, quoteRepo, base.ORDER_TYPE_RECEIPT}
 }
 
 func (s *QuoteReceiptServiceImpl) CheckQuote(ctx context.Context, quoteCode string, quote *entityquote.OrderQuote) (*entityquote.OrderQuote, message.Message, error) {
@@ -47,25 +47,26 @@ func (s *QuoteReceiptServiceImpl) CheckQuote(ctx context.Context, quoteCode stri
 	if !isLogged {
 		return quote, message.ErrNoAuth, errors.New(message.ErrNoAuth.Message)
 	}
+
+	filter := map[string]interface{}{
+		"quote_code":    quoteCode,
+		"order_type_id": s.OrderTypeID,
+		"customer_id":   user.CustomerID,
+	}
 	dbc := repository.DBContext{Context: context.Background(), DB: s.baseRepo.GetDB()}
 	if quote == nil {
-		filter := map[string]interface{}{
-			"quote_code":    quoteCode,
-			"order_type_id": s.OrderTypeID,
-			"customer_id":   user.CustomerID,
-		}
-		quoteRs, err := s.quoteRepo.FindFirstByParams(&dbc, filter, true)
+		quoteRs, err := s.quoteRepo.FindFirstByParams(&dbc, filter, false)
 		if err != nil {
 			return nil, message.ErrNoData, err
 		}
 		quote = quoteRs
 	}
 	// update device_id
-	quote.DeviceID = deviceID
-	//err = s.quoteRepo.UpdateByQuoteCode(&dbc, quote)
-	//if err != nil {
-	//	return nil, message.ErrDB, err
-	//}
+	quote.DeviceID = uint8(deviceID)
+	err = s.quoteRepo.UpdateByQuoteCode(&dbc, quoteCode, *quote)
+	if err != nil {
+		return nil, message.ErrDB, err
+	}
 
 	return quote, message.SuccessMsg, nil
 }
@@ -77,6 +78,5 @@ func (s QuoteReceiptServiceImpl) Find(ctx context.Context, quoteCode string, val
 		return response, msg, err
 	}
 	response = transform.NewQuoteReceiptTransform(s.infra, s.baseRepo, s.quoteRepo).TransformQuote(ctx, quote)
-
 	return response, message.SuccessMsg, nil
 }

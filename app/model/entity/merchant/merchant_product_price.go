@@ -3,8 +3,8 @@ package entity
 import "time"
 
 type MerchantProductPrice struct {
-	ID                            int64     `json:"id"`
-	MerchantProductID             int       `json:"merchant_product_id"`
+	ID                            uint64    `json:"id"`
+	MerchantProductID             uint64    `json:"merchant_product_id"`
 	SellingPrice                  float64   `json:"selling_price"`
 	SpecialPrice                  int64     `json:"special_price"`
 	BundlingQuantity              int64     `json:"bundling_quantity"`
@@ -14,8 +14,8 @@ type MerchantProductPrice struct {
 	SpecialPriceEndTime           time.Time `json:"special_price_end_time"`
 	CreatedAt                     time.Time `json:"created_at"`
 	UpdatedAt                     time.Time `json:"updated_at"`
-	StoreID                       int       `json:"store_id"`
-	MerchantID                    int       `json:"merchant_id"`
+	StoreID                       uint64    `json:"store_id"`
+	MerchantID                    uint64    `json:"merchant_id"`
 	MerchantSpecialPrice          int64     `json:"merchant_special_price"`
 	MerchantSpecialPriceStartTime time.Time `json:"merchant_special_price_start_time"`
 	MerchantSpecialPriceEndTime   time.Time `json:"merchant_special_price_end_time"`

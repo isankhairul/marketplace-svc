@@ -6,8 +6,8 @@ import (
 )
 
 type MerchantShipping struct {
-	ID                 int64                    `json:"id"`
-	ShippingProviderID int                      `json:"shipping_provider_id"`
+	ID                 uint64                   `json:"id"`
+	ShippingProviderID uint64                   `json:"shipping_provider_id"`
 	CreatedAt          time.Time                `json:"created_at"`
 	UpdatedAt          time.Time                `json:"updated_at"`
 	Status             int                      `json:"status"`

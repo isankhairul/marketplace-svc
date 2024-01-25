@@ -3,9 +3,9 @@ package entity
 import "time"
 
 type CustomerAddress struct {
-	ID            int64     `json:"id"`
+	ID            uint64    `json:"id"`
 	Title         string    `json:"title"`
-	CustomerID    int       `json:"customer_id"`
+	CustomerID    uint64    `json:"customer_id"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 	Status        int       `json:"status"`

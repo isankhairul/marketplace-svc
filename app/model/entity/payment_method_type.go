@@ -3,7 +3,7 @@ package entity
 import "time"
 
 type PaymentMethodType struct {
-	ID                    int       `json:"id"`
+	ID                    uint64    `json:"id"`
 	PaymentMethodTypeCode string    `json:"payment_method_type_code"`
 	Name                  string    `json:"name"`
 	SortOrder             int       `json:"sort_order"`

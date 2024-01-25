@@ -7,10 +7,10 @@ import (
 )
 
 type OrderQuoteItem struct {
-	ID                   int64                           `json:"id"`
-	QuoteMerchantID      int64                           `json:"quote_merchant_id"`
-	ProductID            int64                           `json:"product_id"`
-	ItemTypeID           int                             `json:"item_type_id"`
+	ID                   uint64                          `json:"id"`
+	QuoteMerchantID      uint64                          `json:"quote_merchant_id"`
+	ProductID            uint64                          `json:"product_id"`
+	ItemTypeID           uint64                          `json:"item_type_id"`
 	ProductSku           string                          `json:"product_sku"`
 	MerchantSku          string                          `json:"merchant_sku"`
 	MerchantCategoryID   int                             `json:"merchant_category_id"`
@@ -69,6 +69,7 @@ type OrderQuoteItem struct {
 	ProductFlat          *entity.ProductFlat             `gorm:"foreignKey:product_sku;references:sku;" json:"-"`
 	MerchantProduct      *entitymerchant.MerchantProduct `gorm:"foreignKey:product_sku;references:product_sku;" json:"-"`
 	Product              *entity.Product                 `gorm:"foreignKey:product_id;references:id;" json:"-"`
+	ProductCategory      *[]entity.Product               `gorm:"foreignKey:product_id;references:product_id;" json:"-"`
 }
 
 func (o OrderQuoteItem) TableName() string {

@@ -3,18 +3,18 @@ package entity
 import "time"
 
 type ShippingProvider struct {
-	ID                           int64                     `json:"id"`
+	ID                           uint64                    `json:"id"`
 	Code                         string                    `json:"code"`
 	ShippingProviderTypeID       int                       `json:"shipping_provider_type_id"`
 	Name                         string                    `json:"name"`
 	CreatedAt                    time.Time                 `json:"created_at"`
 	UpdatedAt                    time.Time                 `json:"updated_at"`
-	ShippingProviderDurationID   int64                     `json:"shipping_provider_duration_id"`
+	ShippingProviderDurationID   uint64                    `json:"shipping_provider_duration_id"`
 	Status                       int                       `json:"status"`
 	FinanceCoa                   string                    `json:"finance_coa"`
 	StartTime                    string                    `json:"start_time"`
 	EndTime                      string                    `json:"end_time"`
-	InsuranceFee                 int                       `json:"insurance_fee"`
+	InsuranceFee                 float64                   `json:"insurance_fee"`
 	InsuranceFeeIncluded         bool                      `json:"insurance_fee_included"`
 	MdrTypeID                    int                       `json:"mdr_type_id"`
 	Logo                         string                    `json:"logo"`

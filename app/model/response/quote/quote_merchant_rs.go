@@ -7,8 +7,9 @@ import (
 )
 
 type QuoteMerchantRs struct {
-	MerchantID               int64            `json:"merchant_id,omitempty"`
-	MerchantTypeID           int              `json:"merchant_type_id,omitempty"`
+	ID                       uint64           `json:"ID,omitempty"`
+	MerchantID               uint64           `json:"merchant_id,omitempty"`
+	MerchantTypeID           uint64           `json:"merchant_type_id,omitempty"`
 	Image                    string           `json:"image,omitempty"`
 	Slug                     string           `json:"slug,omitempty"`
 	Status                   int              `json:"status,omitempty"`
@@ -36,34 +37,33 @@ type QuoteMerchantRs struct {
 	OrderQuoteShipping       *QuoteShippingRs `json:"orderQuoteShipping,omitempty"`
 }
 
-func (qr QuoteMerchantRs) Transform(qms *[]entity.OrderQuoteMerchant, infra app.Infra) *[]QuoteMerchantRs {
-	var response []QuoteMerchantRs
-	if qms == nil {
+func (qr QuoteMerchantRs) Transform(qm *entity.OrderQuoteMerchant, infra app.Infra) *QuoteMerchantRs {
+	var response QuoteMerchantRs
+	if qm == nil {
 		return nil
 	}
-	for _, qm := range *qms {
-		response = append(response, QuoteMerchantRs{
-			MerchantID:             qm.MerchantID,
-			MerchantTypeID:         qm.MerchantTypeID,
-			Image:                  infra.Config.URL.BaseImageURL + qm.Merchant.Image,
-			Slug:                   qm.Merchant.Slug,
-			Status:                 qm.Merchant.Status,
-			Name:                   qm.Merchant.MerchantName,
-			Code:                   qm.Merchant.MerchantCode,
-			Province:               fmt.Sprint(qm.Merchant.ProvinceID),
-			City:                   fmt.Sprint(qm.Merchant.CityID),
-			MerchantGrandTotal:     qm.MerchantGrandTotal,
-			MerchantTotalQuantity:  qm.MerchantTotalQuantity,
-			MerchantTotalWeight:    qm.MerchantTotalWeight,
-			MerchantNotes:          qm.MerchantNotes,
-			Selected:               qm.Selected,
-			PromoDescription:       qm.PromoDescription,
-			DiscountAmount:         qm.DiscountAmount,
-			ShippingDiscountAmount: qm.ShippingDiscountAmount,
-			AdminFeeCalculation:    qm.AdminFeeCalculation,
-			OrderQuoteItems:        QuoteItemRs{}.Transform(qm.OrderQuoteItem, qm.Merchant, infra),
-			OrderQuoteShipping:     QuoteShippingRs{}.Transform(qm.OrderQuoteShipping, infra.Config.URL.BaseImageURL),
-		})
+	response = QuoteMerchantRs{
+		ID:                     qm.ID,
+		MerchantID:             qm.MerchantID,
+		MerchantTypeID:         qm.MerchantTypeID,
+		Image:                  infra.Config.URL.BaseImageURL + qm.Merchant.Image,
+		Slug:                   qm.Merchant.Slug,
+		Status:                 qm.Merchant.Status,
+		Name:                   qm.Merchant.MerchantName,
+		Code:                   qm.Merchant.MerchantCode,
+		Province:               fmt.Sprint(qm.Merchant.ProvinceID),
+		City:                   fmt.Sprint(qm.Merchant.CityID),
+		MerchantGrandTotal:     qm.MerchantGrandTotal,
+		MerchantTotalQuantity:  qm.MerchantTotalQuantity,
+		MerchantTotalWeight:    qm.MerchantTotalWeight,
+		MerchantNotes:          qm.MerchantNotes,
+		Selected:               qm.Selected,
+		PromoDescription:       qm.PromoDescription,
+		DiscountAmount:         qm.DiscountAmount,
+		ShippingDiscountAmount: qm.ShippingDiscountAmount,
+		AdminFeeCalculation:    qm.AdminFeeCalculation,
+		//OrderQuoteItems:        QuoteItemRs{}.Transform(qm.OrderQuoteItem, qm.Merchant, infra),
+		OrderQuoteShipping: QuoteShippingRs{}.Transform(qm.OrderQuoteShipping, infra.Config.URL.BaseImageURL),
 	}
 
 	return &response

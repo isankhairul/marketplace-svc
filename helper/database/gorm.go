@@ -23,7 +23,7 @@ type gormdb struct {
 func NewGormConnectPostgres(cfg *config.DBConfig, opt *Option) (Database, error) {
 	g := &gormdb{}
 
-	sqlDB, err := sql.Open("postgres", g.postgresDsn(cfg))
+	sqlDB, err := sql.Open("pgx", g.postgresDsn(cfg))
 	if err != nil {
 		return nil, err
 	}

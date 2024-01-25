@@ -3,7 +3,7 @@ package responsequote
 import entity "marketplace-svc/app/model/entity/quote"
 
 type QuoteAddressRs struct {
-	ID                  int64  `json:"id,omitempty"`
+	ID                  uint64 `json:"id,omitempty"`
 	Title               string `json:"title,omitempty"`
 	ReceiverName        string `json:"receiver_name,omitempty"`
 	Street              string `json:"street,omitempty"`
@@ -18,14 +18,14 @@ type QuoteAddressRs struct {
 	DiscountDescription string `json:"discount_description,omitempty"`
 }
 
-func (qr QuoteAddressRs) Transform(qa *entity.OrderQuoteAddress) *QuoteAddressRs {
-	var response QuoteAddressRs //nolint:prealloc
+func (qr QuoteAddressRs) Transform(qa *entity.OrderQuoteAddress) *[]QuoteAddressRs {
+	var response []QuoteAddressRs //nolint:prealloc
 	if qa == nil {
 		return nil
 	}
 
 	// set response
-	response = QuoteAddressRs{
+	response = append(response, QuoteAddressRs{
 		Title:         qa.Title,
 		Province:      qa.Province,
 		City:          qa.City,
@@ -37,7 +37,7 @@ func (qr QuoteAddressRs) Transform(qa *entity.OrderQuoteAddress) *QuoteAddressRs
 		CustomerNotes: qa.CustomerNotes,
 		Postcode:      qa.Zipcode,
 		ReceiverName:  qa.ReceiverName,
-	}
+	})
 
 	return &response
 }

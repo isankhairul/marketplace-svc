@@ -3,9 +3,9 @@ package entity
 import "time"
 
 type PaymentMethod struct {
-	ID                  int64             `json:"id"`
+	ID                  uint64            `json:"id"`
 	Code                string            `json:"code"`
-	PaymentMethodTypeID int64             `json:"payment_method_type_id"`
+	PaymentMethodTypeID uint64            `json:"payment_method_type_id"`
 	Name                string            `json:"name"`
 	Description         string            `json:"description"`
 	Mdr                 int               `json:"mdr"`

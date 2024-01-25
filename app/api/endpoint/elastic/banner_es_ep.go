@@ -25,13 +25,26 @@ func MakeEsBannerEndpoints(s elasticservice.ElasticBannerService) EsBannerEndpoi
 func makeSearchBanner(s elasticservice.ElasticBannerService) endpoint.Endpoint {
 	return func(ctx context.Context, req interface{}) (resp interface{}, err error) {
 		request := req.(requestelastic.BannerRequest)
-		result, page, msg, err := s.Search(ctx, request)
+		v, _, _ := requestEsGroup.Do("SearchBanner_"+request.ToString(), func() (interface{}, error) {
+			result, page, msg, err := s.Search(ctx, request)
+			response := map[string]interface{}{
+				"result": result,
+				"page":   page,
+				"msg":    msg,
+				"err":    err,
+			}
+			return response, nil
+		})
+		response := v.(map[string]interface{})
+		msg := response["msg"].(message.Message)
 
 		//result, page, msg, err := s.Search(ctx, request)
 		if msg != message.SuccessMsg {
 			return base.SetErrorResponse(ctx, msg, err), nil
 		}
-		pagination := page
-		return base.SetHttpResponse(ctx, msg, result, &pagination), nil
+		//pagination := page
+		//return base.SetHttpResponse(ctx, msg, result, &pagination), nil
+		pagination := response["page"].(base.Pagination)
+		return base.SetHttpResponse(ctx, msg, response["result"], &pagination), nil
 	}
 }

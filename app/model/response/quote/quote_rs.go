@@ -5,9 +5,9 @@ import (
 )
 
 type QuoteRs struct {
-	ID                   int                `json:"id,omitempty"`
+	ID                   uint64             `json:"id,omitempty"`
 	QuoteCode            string             `json:"quote_code,omitempty"`
-	StoreID              int                `json:"store_id,omitempty"`
+	StoreID              uint64             `json:"store_id,omitempty"`
 	ContactID            string             `json:"contact_id,omitempty"`
 	CustomerEmail        string             `json:"customer_email,omitempty"`
 	CustomerFirstname    string             `json:"customer_firstname,omitempty"`
@@ -18,17 +18,18 @@ type QuoteRs struct {
 	GrandTotal           float64            `json:"grand_total,omitempty"`
 	Currency             string             `json:"currency,omitempty"`
 	Status               int                `json:"status,omitempty"`
-	OrderTypeID          int                `json:"order_type_id,omitempty"`
+	OrderTypeID          uint8              `json:"order_type_id,omitempty"`
 	TotalQuantity        int                `json:"total_quantity,omitempty"`
-	DeviceID             int                `json:"device_id,omitempty"`
-	CreatedAt            *time.Time         `json:"created_at,omitempty,omitempty"`
-	UpdatedAt            *time.Time         `json:"updated_at,omitempty,omitempty"`
-	ConvertedAt          *time.Time         `json:"converted_at,omitempty,omitempty"`
-	CustomerID           int64              `json:"customer_id,omitempty"`
+	DeviceID             uint8              `json:"device_id,omitempty"`
+	CreatedAt            *time.Time         `json:"created_at,omitempty"`
+	UpdatedAt            *time.Time         `json:"updated_at,omitempty"`
+	ConvertedAt          *time.Time         `json:"converted_at,omitempty"`
+	CustomerID           uint64             `json:"customer_id,omitempty"`
 	CustomerGroupID      int                `json:"customer_group_id,omitempty"`
 	SubtotalWithDiscount float64            `json:"subtotal_with_discount,omitempty"`
 	BaseGrandTotal       float64            `json:"base_grand_total,omitempty"`
-	OrderQuoteAddress    *QuoteAddressRs    `json:"OrderQuoteAddress,omitempty"`
-	OrderQuotePayment    *QuotePaymentRs    `json:"OrderQuotePayment,omitempty"`
+	OrderQuoteAddress    *[]QuoteAddressRs  `json:"OrderQuoteAddress,omitempty"`
+	OrderQuotePayment    *[]QuotePaymentRs  `json:"OrderQuotePayment,omitempty"`
 	OrderQuoteMerchant   *[]QuoteMerchantRs `json:"OrderQuoteMerchant,omitempty"`
+	OrderQuoteReceipt    *QuoteReceiptRs    `json:"OrderQuoteReceipt,omitempty"`
 }
