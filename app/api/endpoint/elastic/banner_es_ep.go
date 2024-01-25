@@ -42,6 +42,8 @@ func makeSearchBanner(s elasticservice.ElasticBannerService) endpoint.Endpoint {
 		if msg != message.SuccessMsg {
 			return base.SetErrorResponse(ctx, msg, err), nil
 		}
+		//pagination := page
+		//return base.SetHttpResponse(ctx, msg, result, &pagination), nil
 		pagination := response["page"].(base.Pagination)
 		return base.SetHttpResponse(ctx, msg, response["result"], &pagination), nil
 	}

@@ -3,7 +3,7 @@ package entity
 import "time"
 
 type Banner struct {
-	ID                  int       `json:"id"`
+	ID                  uint64    `json:"id"`
 	BannerCategoryID    int       `json:"banner_category_id"`
 	ChannelID           int       `json:"channel_id"`
 	Title               string    `json:"title"`

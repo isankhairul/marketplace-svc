@@ -2,7 +2,7 @@ package base
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/bytedance/sonic"
 	"net/http"
 	"reflect"
 
@@ -138,7 +138,7 @@ func SetErrorResponse(ctx context.Context, msg message.Message, errs error) inte
 func ResponseWriter(w http.ResponseWriter, status int, response interface{}) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(response)
+	_ = sonic.ConfigDefault.NewEncoder(w).Encode(response)
 }
 
 // swagger:response ErrorResponseBody

@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5
 	github.com/alitto/pond v1.8.3
+	github.com/bytedance/sonic v1.10.2
 	github.com/confluentinc/confluent-kafka-go/v2 v2.2.0
 	github.com/elastic/go-elasticsearch/v7 v7.17.10
 	github.com/getsentry/sentry-go v0.25.0
@@ -36,6 +37,14 @@ require (
 	golang.org/x/sync v0.3.0
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/gorm v1.25.4
+)
+
+require (
+	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
+	github.com/chenzhuoyu/iasm v0.9.0 // indirect
+	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
+	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
+	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
 )
 
 require (

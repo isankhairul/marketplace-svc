@@ -3,7 +3,7 @@ package entity
 import "time"
 
 type MerchantFlat struct {
-	ID                int       `json:"id"`
+	ID                uint64    `json:"id"`
 	Code              string    `json:"code"`
 	Name              string    `json:"name"`
 	Slug              string    `json:"slug"`
@@ -40,4 +40,8 @@ type MerchantFlat struct {
 	MerchantUID       string    `json:"merchant_uid"`
 	Latitude          string    `json:"latitude"`
 	Longitude         string    `json:"longitude"`
+}
+
+func (m MerchantFlat) TableName() string {
+	return "merchant_flat_"
 }

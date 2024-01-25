@@ -12,6 +12,7 @@ import (
 	requestelastic "marketplace-svc/app/model/request/elastic"
 	elasticservice "marketplace-svc/app/service/elastic"
 	"marketplace-svc/helper/_struct"
+	"marketplace-svc/helper/global"
 	"marketplace-svc/helper/logger"
 	"net/http"
 )
@@ -24,6 +25,8 @@ func EsBannerHttpHandler(s elasticservice.ElasticBannerService, app *app.Infra) 
 		httpTransport.ServerErrorHandler(app.Log),
 		httpTransport.ServerErrorEncoder(encoder.EncodeError),
 		httpTransport.ServerBefore(jwt.HTTPToContext(), logger.TraceIdentifier()),
+		httpTransport.ServerBefore(global.HTTPToContextJWTClaims()),
+		httpTransport.ServerBefore(global.HTTPHeaderToContext()),
 	}
 
 	pr.Methods(http.MethodGet).Path(app.URLWithPrefix(_struct.PrefixES + "/banner/")).Handler(httpTransport.NewServer(

@@ -2,7 +2,7 @@ package encoder
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/bytedance/sonic"
 	helpervalidation "marketplace-svc/helper/validation"
 	"net/http"
 
@@ -40,7 +40,7 @@ func EncodeResponseHTTP(ctx context.Context, w http.ResponseWriter, resp interfa
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
-	return json.NewEncoder(w).Encode(resp)
+	return sonic.ConfigDefault.NewEncoder(w).Encode(resp)
 }
 
 func EncodeError(ctx context.Context, err error, w http.ResponseWriter) {

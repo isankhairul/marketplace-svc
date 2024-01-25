@@ -5,6 +5,7 @@ import (
 	"marketplace-svc/app/api/middleware"
 	"marketplace-svc/app/api/transport"
 	transportelastic "marketplace-svc/app/api/transport/elastic"
+	"marketplace-svc/app/registry"
 	elasticregistry "marketplace-svc/app/registry/elastic"
 	"marketplace-svc/helper/_struct"
 	"net/http"
@@ -37,6 +38,9 @@ func InitRouting(app *app.Infra) *http.ServeMux {
 	esOrderSvc := elasticregistry.RegisterEsOrderService(app)
 	esProductSvc := elasticregistry.RegisterEsProductService(app)
 
+	// quote
+	quoteReceiptSvc := registry.RegisterQuoteReceiptService(app)
+
 	//  Transport initialization
 	swagHttp := transport.SwaggerHttpHandler(app.Config.URL) //don't delete or change this !!
 
@@ -48,6 +52,8 @@ func InitRouting(app *app.Infra) *http.ServeMux {
 	esMerchantHttp := transportelastic.EsMerchantHttpHandler(esMerchantSvc, app)
 	esOrderHttp := transportelastic.EsOrderHttpHandler(esOrderSvc, app)
 	esProductHttp := transportelastic.EsProductHttpHandler(esProductSvc, app)
+
+	quoteReceiptHttp := transport.QuoteReceiptHttpHandler(quoteReceiptSvc, app)
 
 	// Routing path
 	mux := http.NewServeMux()
@@ -66,6 +72,7 @@ func InitRouting(app *app.Infra) *http.ServeMux {
 	mux.Handle(app.URLWithPrefix("products/"), middleware.Adapt(esProductHttp, loggingMiddleware))
 	mux.Handle(app.URLWithPrefix("merchant-product/"), middleware.Adapt(esMerchantHttp, loggingMiddleware, authMiddleware))
 	mux.Handle(app.URLWithPrefix("pharmacies"), middleware.Adapt(esMerchantHttp, loggingMiddleware))
+	mux.Handle(app.URLWithPrefix("quote-receipt/"), middleware.Adapt(quoteReceiptHttp, loggingMiddleware))
 
 	return mux
 }

@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	model_jwt "marketplace-svc/app/model/jwt"
 	"marketplace-svc/helper/config"
 	"marketplace-svc/helper/global"
 	helperjwt "marketplace-svc/helper/jwt"
@@ -54,9 +53,9 @@ func AuthzToContext(cfg *config.JwtConfig) httptransport.RequestFunc {
 	}
 }
 
-func IsAuthContext(ctx context.Context) (*model_jwt.ClaimsJWT, bool) {
+func IsAuthContext(ctx context.Context) (*global.JWTInfo, bool) {
 	payload := ctx.Value(jwt.JWTClaimsContextKey)
-	if user, ok := payload.(*model_jwt.ClaimsJWT); ok && user != nil {
+	if user, ok := payload.(*global.JWTInfo); ok && user != nil {
 		return user, true
 	}
 	return nil, false

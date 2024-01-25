@@ -32,10 +32,9 @@ import (
 
 	"github.com/spf13/viper"
 
+	"github.com/gorilla/handlers"
 	_ "github.com/lib/pq"
 	_ "github.com/spf13/viper/remote"
-
-	"github.com/gorilla/handlers"
 )
 
 func main() {
@@ -48,7 +47,6 @@ func main() {
 	infra.WithLog().WithDB().WithKafkaProducer().WithElasticClient()
 
 	log := infra.Log
-
 	log.Info("sentry: " + fmt.Sprint(viper.GetBool("sentry.is-active")))
 
 	// sentry

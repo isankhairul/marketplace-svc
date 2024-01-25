@@ -37,7 +37,7 @@ func NewElasticBannerService(
 	return &elasticBannerServiceImpl{config, lg, br, esc}
 }
 
-func (s elasticBannerServiceImpl) Search(_ context.Context, input requestelastic.BannerRequest) ([]map[string]interface{}, base.Pagination, message.Message, error) {
+func (s elasticBannerServiceImpl) Search(ctx context.Context, input requestelastic.BannerRequest) ([]map[string]interface{}, base.Pagination, message.Message, error) {
 	var bannerResponse []map[string]interface{}
 	var pagination base.Pagination
 	msg := message.SuccessMsg

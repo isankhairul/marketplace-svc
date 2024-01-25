@@ -3,6 +3,7 @@ package middleware
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/bytedance/sonic"
 	"io"
 	"marketplace-svc/app"
 	"net/http"
@@ -43,7 +44,7 @@ func LoggingMiddleware(infra *app.Infra) Middleware {
 				if len(reqBodyBytes) > 0 {
 					// change request hidden
 					var HiddenRequest map[string]any
-					if err := json.Unmarshal(reqBodyBytes, &HiddenRequest); err != nil {
+					if err := sonic.Unmarshal(reqBodyBytes, &HiddenRequest); err != nil {
 						log.Error(err)
 					}
 
@@ -51,7 +52,7 @@ func LoggingMiddleware(infra *app.Infra) Middleware {
 					for _, event := range events {
 						if HiddenRequest[event] != "" {
 							HiddenRequest[event] = hiddenChar
-							modifiedReqBodyBytes, _ := json.Marshal(HiddenRequest)
+							modifiedReqBodyBytes, _ := sonic.Marshal(HiddenRequest)
 							reqBodyBytes = modifiedReqBodyBytes
 						}
 					}
@@ -70,7 +71,7 @@ func LoggingMiddleware(infra *app.Infra) Middleware {
 			for key, values := range r.Header {
 				headers[key] = values
 			}
-			jsonHeaders, _ := json.Marshal(headers)
+			jsonHeaders, _ := sonic.Marshal(headers)
 
 			// get base url
 			// detect url forwarder KrakenD
