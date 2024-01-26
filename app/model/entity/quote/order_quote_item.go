@@ -69,7 +69,7 @@ type OrderQuoteItem struct {
 	ProductFlat          *entity.ProductFlat             `gorm:"foreignKey:product_sku;references:sku;" json:"-"`
 	MerchantProduct      *entitymerchant.MerchantProduct `gorm:"foreignKey:product_sku;references:product_sku;" json:"-"`
 	Product              *entity.Product                 `gorm:"foreignKey:product_id;references:id;" json:"-"`
-	ProductCategory      *[]entity.Product               `gorm:"foreignKey:product_id;references:product_id;" json:"-"`
+	ProductCategory      *[]entity.ProductCategory       `gorm:"foreignKey:product_id;references:product_id;" json:"-"`
 }
 
 func (o OrderQuoteItem) TableName() string {
