@@ -19,7 +19,7 @@ RUN go install golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldali
     fieldalignment -fix app/model/response/quote/*.go && 
     fieldalignment -fix app/model/entity/*.go &&
     fieldalignment -fix app/model/entity/quote/*.go &&
-    fieldalignment -fix app/model/entity/catalog/*.go
+    fieldalignment -fix app/model/entity/catalog/*.go &&
     fieldalignment -fix app/model/entity/merchant/*.go
 
 RUN CGO_CFLAGS="-D_LARGEFILE64_SOURCE" CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -tags musl -a -installsuffix cgo -o /go/bin/marketplace-svc
