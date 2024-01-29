@@ -18,7 +18,7 @@ type QuoteAddressRs struct {
 	DiscountDescription string `json:"discount_description,omitempty"`
 }
 
-func (qr QuoteAddressRs) Transform(qa *entity.OrderQuoteAddress) *[]QuoteAddressRs {
+func (qr QuoteAddressRs) Transform(qa *entity.OrderQuoteAddress) []QuoteAddressRs {
 	var response []QuoteAddressRs //nolint:prealloc
 	if qa == nil {
 		return nil
@@ -39,5 +39,5 @@ func (qr QuoteAddressRs) Transform(qa *entity.OrderQuoteAddress) *[]QuoteAddress
 		ReceiverName:  qa.ReceiverName,
 	})
 
-	return &response
+	return response
 }

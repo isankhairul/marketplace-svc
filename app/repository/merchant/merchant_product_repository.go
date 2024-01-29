@@ -35,10 +35,9 @@ func (r *merchantProductRepository) FindFirstByParams(dbc *base.DBContext, filte
 		query = query.Debug()
 	}
 
-	err := query.
+	err := query.Omit("reserved_stock,stock_on_hand,buffer_stockparent_reserved_stock,merchant_included_item,old_status,updated_by,created_at,updated_at,deleted_at").
 		Preload("MerchantProductPrice").
-		Order("id DESC").
-		Find(&merchantProduct).Error
+		First(&merchantProduct).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

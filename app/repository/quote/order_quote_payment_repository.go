@@ -2,7 +2,6 @@ package repository
 
 import (
 	"errors"
-	"fmt"
 	"gorm.io/gorm"
 	modelbase "marketplace-svc/app/model/base"
 	entity "marketplace-svc/app/model/entity/quote"
@@ -46,12 +45,10 @@ func (r *orderQuotePaymentRepository) FindFirstByParams(dbc *base.DBContext, fil
 			})
 	}
 
-	err := query.
-		Order("id DESC").
-		Find(&orderQuotePayment).Error
+	err := query.Omit("created_at, updated_at").
+		First(&orderQuotePayment).Error
 
 	if err != nil {
-		fmt.Println("ERR", err)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, err
 		}

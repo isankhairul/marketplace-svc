@@ -61,9 +61,8 @@ func (r *orderQuoteMerchantRepository) FindFirstByParams(dbc *base.DBContext, fi
 			})
 	}
 
-	err := query.
-		Order("id DESC").
-		Find(&orderQuote).Error
+	err := query.Omit("created_at,updated_at,merchant_total_quantity,merchant_total_weight,merchant_total_point_earned,merchant_total_point_spent,event,redeem").
+		First(&orderQuote).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -119,7 +118,8 @@ func (r *orderQuoteMerchantRepository) FindByParams(dbc *base.DBContext, filter 
 			})
 	}
 
-	err := query.Scopes(r.Paginate(orderQuotes, &pagination, query)).
+	err := query.Omit("created_at,updated_at,merchant_total_quantity,merchant_total_weight,merchant_total_point_earned,merchant_total_point_spent,event,redeem").
+		Scopes(r.Paginate(orderQuotes, &pagination, query)).
 		Order("id DESC").
 		Find(&orderQuotes).
 		Error
