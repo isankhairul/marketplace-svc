@@ -33,8 +33,8 @@ type QuoteMerchantRs struct {
 	Selected                 bool             `json:"selected,omitempty"`
 	MerchantWarning          []interface{}    `json:"merchant_warning,omitempty"`
 	StockStatus              int              `json:"stock_status,omitempty"`
-	OrderQuoteItems          *[]QuoteItemRs   `json:"orderQuoteItems,omitempty"`
-	OrderQuoteShipping       *QuoteShippingRs `json:"orderQuoteShipping,omitempty"`
+	OrderQuoteItems          *[]QuoteItemRs   `json:"orderQuoteItems"`
+	OrderQuoteShipping       *QuoteShippingRs `json:"orderQuoteShipping"`
 }
 
 func (qr QuoteMerchantRs) Transform(qm *entity.OrderQuoteMerchant, infra app.Infra) *QuoteMerchantRs {

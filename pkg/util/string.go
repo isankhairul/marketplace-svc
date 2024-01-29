@@ -26,3 +26,12 @@ func StringToInt(strInt string) int {
 	}
 	return int(intStr)
 }
+
+func IntToString(a []uint64) string {
+	b := make([]string, len(a))
+	for i, v := range a {
+		b[i] = strconv.Itoa(int(v))
+	}
+
+	return strings.Join(b, ",")
+}

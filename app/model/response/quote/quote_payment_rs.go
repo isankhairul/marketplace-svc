@@ -12,7 +12,7 @@ type QuotePaymentRs struct {
 	PaymentLogo           string  `json:"payment_logo,omitempty"`
 }
 
-func (qr QuotePaymentRs) Transform(qp *entity.OrderQuotePayment, baseImageURL string) *[]QuotePaymentRs {
+func (qr QuotePaymentRs) Transform(qp *entity.OrderQuotePayment, baseImageURL string) []QuotePaymentRs {
 	var response []QuotePaymentRs //nolint:prealloc
 	if qp == nil || qp.ID == 0 {
 		return nil
@@ -29,5 +29,5 @@ func (qr QuotePaymentRs) Transform(qp *entity.OrderQuotePayment, baseImageURL st
 		PaymentLogo:           baseImageURL + qp.PaymentMethod.Logo,
 	})
 
-	return &response
+	return response
 }

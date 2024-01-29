@@ -35,9 +35,9 @@ func (r *orderQuoteAddressRepository) FindFirstByParams(dbc *base.DBContext, fil
 		}
 	}
 
-	err := query.
-		Order("id DESC").
-		Find(&orderQuoteAddress).Error
+	err := query.Select("id,quote_id,customer_address_id,title,email,receiver_name,street,province_id,city_id,district_id,zipcode,phone_number,customer_notes,postcode_id " +
+		" coordinate,province,city,district,subdistrict").
+		First(&orderQuoteAddress).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

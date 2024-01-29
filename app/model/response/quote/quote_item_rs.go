@@ -1,18 +1,15 @@
 package responsequote
 
 import (
-	"context"
 	"fmt"
-	"marketplace-svc/app"
 	entitymerchant "marketplace-svc/app/model/entity/merchant"
 	entity "marketplace-svc/app/model/entity/quote"
-	"marketplace-svc/app/repository"
-	repomerchant "marketplace-svc/app/repository/merchant"
 	"marketplace-svc/pkg/util"
 )
 
 type QuoteItemRs struct {
 	ID                    uint64   `json:"id,omitempty"`
+	QuoteMerchantID       uint64   `json:"quote_merchant_id,omitempty"`
 	ProductSku            string   `json:"product_sku,omitempty"`
 	MerchantSku           string   `json:"merchant_sku,omitempty"`
 	Name                  string   `json:"name,omitempty"`
@@ -48,25 +45,11 @@ type QuoteItemRs struct {
 	StockStatus           int      `json:"stock_status,omitempty"`
 }
 
-func (qr QuoteItemRs) Transform(oqi *entity.OrderQuoteItem, merchant entitymerchant.Merchant, infra app.Infra) *QuoteItemRs {
+func (qr QuoteItemRs) Transform(oqi *entity.OrderQuoteItem, merchant entitymerchant.Merchant, mp entitymerchant.MerchantProduct, arrCategory []string, image string) *QuoteItemRs {
 	var response QuoteItemRs
 	if oqi == nil {
 		return nil
 	}
-	baseRepo := repository.NewBaseRepository(infra.DB)
-	mpRepo := repomerchant.NewMerchantProductRepository(baseRepo)
-	dbc := repository.DBContext{DB: baseRepo.GetDB(), Context: context.Background()}
-
-	filterMp := map[string]interface{}{
-		"merchant_id":  merchant.ID,
-		"product_sku":  oqi.ProductSku,
-		"merchant_sku": oqi.MerchantSku,
-	}
-	mp, err := mpRepo.FindFirstByParams(&dbc, filterMp, true)
-	if err != nil {
-		return nil
-	}
-	firstProductImage := *oqi.Product.ProductImage
 
 	intStockStatus := 0
 	if oqi.ProductFlat.Status == 0 || oqi.ProductFlat.IsActive == 0 || mp.Status == 0 || mp.Stock < 1 {
@@ -75,13 +58,14 @@ func (qr QuoteItemRs) Transform(oqi *entity.OrderQuoteItem, merchant entitymerch
 
 	response = QuoteItemRs{
 		ID:                    oqi.ID,
+		QuoteMerchantID:       oqi.QuoteMerchantID,
 		ProductSku:            oqi.ProductSku,
 		MerchantSku:           oqi.MerchantSku,
 		Name:                  oqi.Name,
 		Slug:                  oqi.ProductFlat.Slug,
 		Status:                oqi.ProductFlat.Status,
 		IsActive:              oqi.ProductFlat.IsActive,
-		Image:                 infra.Config.URL.BaseImageURL + firstProductImage[0].ImageThumbnail,
+		Image:                 image,
 		GlobalMaxQty:          util.StringToInt(oqi.ProductFlat.MaximumPurchaseQuantity),
 		ItemNotes:             oqi.ItemNotes,
 		Weight:                oqi.Weight,
@@ -100,6 +84,7 @@ func (qr QuoteItemRs) Transform(oqi *entity.OrderQuoteItem, merchant entitymerch
 		Selected:              oqi.Selected,
 		ProductMerchantUID:    fmt.Sprint(oqi.ProductID) + "-" + merchant.MerchantUID,
 		StockStatus:           intStockStatus,
+		Categories:            arrCategory,
 	}
 
 	return &response

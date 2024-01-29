@@ -4,10 +4,11 @@ import (
 	"context"
 	"marketplace-svc/app"
 	"marketplace-svc/app/model/base"
-	entitymerchant "marketplace-svc/app/model/entity/merchant"
 	entityquote "marketplace-svc/app/model/entity/quote"
 	responsequote "marketplace-svc/app/model/response/quote"
 	"marketplace-svc/app/repository"
+	repocatalog "marketplace-svc/app/repository/catalog"
+	repomerchant "marketplace-svc/app/repository/merchant"
 	repoquote "marketplace-svc/app/repository/quote"
 	"sync"
 )
@@ -32,45 +33,78 @@ func (s QuoteReceiptTransform) TransformQuote(ctx context.Context, quote *entity
 		return nil
 	}
 	var subTotal, totalQty, totalPointEarned, totalPointSpent, totalWeight, totalDiscount, grandTotal float64
+	var arrQuoteMerchantID []uint64
+
+	dbc := repository.DBContext{DB: s.baseRepo.GetDB(), Context: ctx}
+	quoteMerchantRepo := repoquote.NewOrderQuoteMerchantRepository(s.baseRepo)
+	qms, _, err := quoteMerchantRepo.FindByParams(&dbc, map[string]interface{}{"quote_id": quote.ID}, false, 20, 1)
+	if qms != nil && err == nil {
+		for _, q := range *qms {
+			arrQuoteMerchantID = append(arrQuoteMerchantID, q.ID)
+		}
+	}
 
 	// get quote payment
-	chanQuotePayment := make(chan *[]responsequote.QuotePaymentRs, 1)
+	chanQuotePayment := make(chan []responsequote.QuotePaymentRs, 1)
 	defer close(chanQuotePayment)
 	var wg sync.WaitGroup
 	// there are 3 process: get payment, merchant, address
-	wg.Add(3)
+	wg.Add(4)
 
-	go func(ctx context.Context, quoteID uint64) {
+	go func() {
 		defer wg.Done()
-		s.asyncGetQuotePayment(ctx, quoteID, chanQuotePayment)
-	}(ctx, quote.ID)
+		s.asyncGetQuotePayment(ctx, quote.ID, chanQuotePayment)
+	}()
 
 	// get quote merchant
-	chanQuoteMerchant := make(chan *[]responsequote.QuoteMerchantRs, 1)
+	chanQuoteMerchant := make(chan []responsequote.QuoteMerchantRs, 1)
 	defer close(chanQuoteMerchant)
-	go func(ctx context.Context, quoteID uint64) {
+	go func() {
 		defer wg.Done()
-		s.asyncGetQuoteMerchant(ctx, quoteID, chanQuoteMerchant)
-	}(ctx, quote.ID)
+		s.asyncGetQuoteMerchant(ctx, quote.ID, chanQuoteMerchant)
+	}()
+
+	// get quote item
+	chanQuoteItem := make(chan []responsequote.QuoteItemRs, 1)
+	defer close(chanQuoteItem)
+	go func() {
+		defer wg.Done()
+		s.asyncGetQuoteItem(ctx, arrQuoteMerchantID, chanQuoteItem)
+	}()
 
 	// get quote address
-	chanQuoteAddress := make(chan *[]responsequote.QuoteAddressRs, 1)
+	chanQuoteAddress := make(chan []responsequote.QuoteAddressRs, 1)
 	defer close(chanQuoteAddress)
-	go func(ctx context.Context, quoteID uint64) {
+	go func() {
 		defer wg.Done()
-		s.asyncGetQuoteAddress(ctx, quoteID, chanQuoteAddress)
-	}(ctx, quote.ID)
+		s.asyncGetQuoteAddress(ctx, quote.ID, chanQuoteAddress)
+	}()
 
 	// wait all and get channel value
 	wg.Wait()
-	quoteMerchant := <-chanQuoteMerchant //*[]responsequote.QuoteMerchantRs
+	quoteMerchant := <-chanQuoteMerchant
+	quoteItems := <-chanQuoteItem
 	quotePayment := <-chanQuotePayment
 	quoteAddress := <-chanQuoteAddress
 
-	var quoteItems []responsequote.QuoteItemRs
-	if quoteMerchant != nil && len(*quoteMerchant) > 0 {
-		for _, quoteMerchant := range *quoteMerchant {
-			quoteItems = append(quoteItems, *quoteMerchant.OrderQuoteItems...)
+	if len(quoteMerchant) > 0 {
+		// implement time complexity O(log n)
+		// space complexity O(n)
+		quoteItemMap := map[uint64][]responsequote.QuoteItemRs{}
+		if quoteItems != nil {
+			for _, item := range quoteItems {
+				if _, ok := quoteItemMap[item.QuoteMerchantID]; !ok {
+					quoteItemMap[item.QuoteMerchantID] = append([]responsequote.QuoteItemRs{}, item)
+					continue
+				}
+				quoteItemMap[item.QuoteMerchantID] = append(quoteItemMap[item.QuoteMerchantID], item)
+			}
+			// assign quote item to quote merchant
+			for i := 0; i < len(quoteMerchant); i++ {
+				if quoteItem, ok := quoteItemMap[quoteMerchant[i].ID]; ok {
+					quoteMerchant[i].OrderQuoteItems = &quoteItem
+				}
+			}
 		}
 	}
 
@@ -98,24 +132,22 @@ func (s QuoteReceiptTransform) TransformQuote(ctx context.Context, quote *entity
 		Weight:             totalWeight,
 		Subtotal:           subTotal,
 		ShippingAmount:     quote.ShippingAmount,
+		DiscountAmount:     totalDiscount,
 		GrandTotal:         grandTotal,
 		Currency:           "IDR",
-		Status:             quote.Status,
-		OrderTypeID:        quote.OrderTypeID,
 		TotalQuantity:      int(totalQty),
-		CustomerGroupID:    quote.CustomerGroupID,
-		CreatedAt:          quote.CreatedAt,
-		UpdatedAt:          quote.UpdatedAt,
-		OrderQuotePayment:  quotePayment,
-		OrderQuoteMerchant: quoteMerchant,
-		OrderQuoteAddress:  quoteAddress,
-		OrderQuoteReceipt:  responsequote.QuoteReceiptRs{}.Transform(quote.DataReceipt),
+		CouponCode:         quote.CouponCode,
+		OrderTypeID:        quote.OrderTypeID,
+		OrderQuotePayment:  &quotePayment,
+		OrderQuoteMerchant: &quoteMerchant,
+		OrderQuoteAddress:  &quoteAddress,
+		OrderQuoteReceipt:  quote.DataReceipt,
 	}
 
 	return &quoteRs
 }
 
-func (s QuoteReceiptTransform) asyncGetQuotePayment(ctx context.Context, quoteID uint64, chanQ chan<- *[]responsequote.QuotePaymentRs) {
+func (s QuoteReceiptTransform) asyncGetQuotePayment(ctx context.Context, quoteID uint64, chanQ chan<- []responsequote.QuotePaymentRs) {
 	dbc := repository.DBContext{DB: s.baseRepo.GetDB(), Context: ctx}
 	quotePaymentRepo := repoquote.NewOrderQuotePaymentRepository(s.baseRepo)
 	filter := map[string]interface{}{
@@ -130,7 +162,7 @@ func (s QuoteReceiptTransform) asyncGetQuotePayment(ctx context.Context, quoteID
 	return
 }
 
-func (s QuoteReceiptTransform) asyncGetQuoteAddress(ctx context.Context, quoteID uint64, chanQ chan<- *[]responsequote.QuoteAddressRs) {
+func (s QuoteReceiptTransform) asyncGetQuoteAddress(ctx context.Context, quoteID uint64, chanQ chan<- []responsequote.QuoteAddressRs) {
 	dbc := repository.DBContext{DB: s.baseRepo.GetDB(), Context: ctx}
 	quoteAddressRepo := repoquote.NewOrderQuoteAddressRepository(s.baseRepo)
 	filter := map[string]interface{}{
@@ -145,7 +177,7 @@ func (s QuoteReceiptTransform) asyncGetQuoteAddress(ctx context.Context, quoteID
 	return
 }
 
-func (s QuoteReceiptTransform) asyncGetQuoteMerchant(ctx context.Context, quoteID uint64, chanQ chan<- *[]responsequote.QuoteMerchantRs) {
+func (s QuoteReceiptTransform) asyncGetQuoteMerchant(ctx context.Context, quoteID uint64, chanQ chan<- []responsequote.QuoteMerchantRs) {
 	dbc := repository.DBContext{DB: s.baseRepo.GetDB(), Context: ctx}
 	quoteMerchantRepo := repoquote.NewOrderQuoteMerchantRepository(s.baseRepo)
 	filter := map[string]interface{}{
@@ -168,14 +200,6 @@ func (s QuoteReceiptTransform) asyncGetQuoteMerchant(ctx context.Context, quoteI
 				defer wg.Done()
 				quoteMerchantRs := *responsequote.QuoteMerchantRs{}.Transform(&qm, s.infra)
 
-				// get quote item
-				chanQI := make(chan *[]responsequote.QuoteItemRs, 1)
-				defer close(chanQI)
-				go func() {
-					s.asyncGetQuoteItem(ctx, quoteMerchantRs.ID, qm.Merchant, chanQI)
-				}()
-				quoteMerchantRs.OrderQuoteItems = <-chanQI
-
 				chanQM <- quoteMerchantRs
 				return
 			}(qm)
@@ -188,17 +212,20 @@ func (s QuoteReceiptTransform) asyncGetQuoteMerchant(ctx context.Context, quoteI
 		}
 	}
 
-	chanQ <- &quoteMerchants
+	chanQ <- quoteMerchants
 	return
 }
 
-func (s QuoteReceiptTransform) asyncGetQuoteItem(ctx context.Context, quoteMerchantID uint64, merchant entitymerchant.Merchant, chanQ chan<- *[]responsequote.QuoteItemRs) {
+func (s QuoteReceiptTransform) asyncGetQuoteItem(ctx context.Context, arrQuoteMerchantID []uint64, chanQ chan<- []responsequote.QuoteItemRs) {
+	// check count arrQuoteMerchantID
+	if len(arrQuoteMerchantID) == 0 {
+		chanQ <- nil
+		return
+	}
+
 	dbc := repository.DBContext{DB: s.baseRepo.GetDB(), Context: ctx}
 	quoteItemRepo := repoquote.NewOrderQuoteItemRepository(s.baseRepo)
-	filter := map[string]interface{}{
-		"quote_merchant_id": quoteMerchantID,
-	}
-	quoteItem, _, err := quoteItemRepo.FindByParams(&dbc, filter, true, 100, 1)
+	quoteItem, err := quoteItemRepo.FindRawByQuoteMerchantID(&dbc, arrQuoteMerchantID)
 	if err != nil || quoteItem == nil {
 		chanQ <- nil
 		return
@@ -213,7 +240,26 @@ func (s QuoteReceiptTransform) asyncGetQuoteItem(ctx context.Context, quoteMerch
 		for _, qi := range *quoteItem {
 			go func(qi entityquote.OrderQuoteItem) {
 				defer wg.Done()
-				chanQI <- *responsequote.QuoteItemRs{}.Transform(&qi, merchant, s.infra)
+				mpRepo := repomerchant.NewMerchantProductRepository(s.baseRepo)
+				pcRepo := repocatalog.NewProductCategoryRepository(s.baseRepo)
+
+				filterMp := map[string]interface{}{
+					"merchant_id":  qi.Merchant.ID,
+					"product_sku":  qi.ProductSku,
+					"merchant_sku": qi.MerchantSku,
+				}
+				mp, err := mpRepo.FindFirstByParams(&dbc, filterMp, true)
+				if err != nil {
+					return
+				}
+				arrCategory, _ := pcRepo.GetCategoryMenu(&dbc, qi.ProductID, 1)
+				image := ""
+				if qi.Product.ProductImage != nil {
+					firstProductImage := *qi.Product.ProductImage
+					image = s.infra.Config.URL.BaseImageURL + firstProductImage[0].ImageThumbnail
+				}
+
+				chanQI <- *responsequote.QuoteItemRs{}.Transform(&qi, *qi.Merchant, *mp, arrCategory, image)
 			}(qi)
 		}
 		wg.Wait()
@@ -224,6 +270,6 @@ func (s QuoteReceiptTransform) asyncGetQuoteItem(ctx context.Context, quoteMerch
 		}
 	}
 
-	chanQ <- &quoteItems
+	chanQ <- quoteItems
 	return
 }

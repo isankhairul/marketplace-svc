@@ -63,7 +63,10 @@ func (s *QuoteReceiptServiceImpl) CheckQuote(ctx context.Context, quoteCode stri
 	}
 	// update device_id
 	quote.DeviceID = uint8(deviceID)
-	err = s.quoteRepo.UpdateByQuoteCode(&dbc, quoteCode, *quote)
+	dataUpdate := map[string]interface{}{
+		"device_id": quote.DeviceID,
+	}
+	err = s.quoteRepo.UpdateMapByQuoteCode(&dbc, quoteCode, dataUpdate)
 	if err != nil {
 		return nil, message.ErrDB, err
 	}
