@@ -14,12 +14,12 @@ type OrderQuoteItem struct {
 	ProductSku           string                          `json:"product_sku"`
 	MerchantSku          string                          `json:"merchant_sku"`
 	MerchantCategoryID   int                             `json:"merchant_category_id"`
-	CategoryID           uint64                          `json:"category_id"`
-	BrandID              uint64                          `json:"brand_id"`
+	CategoryID           *uint64                         `json:"category_id"`
+	BrandID              *uint64                         `json:"brand_id"`
 	Name                 string                          `json:"name"`
 	ItemNotes            string                          `json:"item_notes"`
 	Weight               float64                         `json:"weight"`
-	Quantity             int                             `json:"quantity"`
+	Quantity             int32                           `json:"quantity"`
 	Price                float64                         `json:"price"`
 	DiscountPercentage   float64                         `json:"discount_percentage"`
 	DiscountAmount       float64                         `json:"discount_amount"`
@@ -84,12 +84,12 @@ type OrderQuoteItemJoin struct {
 	ProductSku           string     `json:"product_sku"`
 	MerchantSku          string     `json:"merchant_sku"`
 	MerchantCategoryID   uint64     `json:"merchant_category_id"`
-	CategoryID           uint64     `json:"category_id"`
-	BrandID              uint64     `json:"brand_id"`
+	CategoryID           *uint64    `json:"category_id"`
+	BrandID              *uint64    `json:"brand_id"`
 	Name                 string     `json:"name"`
 	ItemNotes            string     `json:"item_notes"`
 	Weight               float64    `json:"weight"`
-	Quantity             int        `json:"quantity"`
+	Quantity             int32      `json:"quantity"`
 	Price                float64    `json:"price"`
 	DiscountPercentage   float64    `json:"discount_percentage"`
 	DiscountAmount       float64    `json:"discount_amount"`

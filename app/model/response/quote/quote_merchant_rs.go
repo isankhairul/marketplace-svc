@@ -1,7 +1,6 @@
 package responsequote
 
 import (
-	"fmt"
 	"marketplace-svc/app"
 	entity "marketplace-svc/app/model/entity/quote"
 )
@@ -51,9 +50,10 @@ func (qr QuoteMerchantRs) Transform(qm *entity.OrderQuoteMerchant, infra app.Inf
 		Status:                 qm.Merchant.Status,
 		Name:                   qm.Merchant.MerchantName,
 		Code:                   qm.Merchant.MerchantCode,
-		Province:               fmt.Sprint(qm.Merchant.ProvinceID),
-		City:                   fmt.Sprint(qm.Merchant.CityID),
+		Province:               qm.Merchant.Province.Name,
+		City:                   qm.Merchant.City.Name,
 		MerchantGrandTotal:     qm.MerchantGrandTotal,
+		MerchantSubtotal:       qm.MerchantSubtotal,
 		MerchantTotalQuantity:  qm.MerchantTotalQuantity,
 		MerchantTotalWeight:    qm.MerchantTotalWeight,
 		MerchantNotes:          qm.MerchantNotes,
@@ -62,8 +62,7 @@ func (qr QuoteMerchantRs) Transform(qm *entity.OrderQuoteMerchant, infra app.Inf
 		DiscountAmount:         qm.DiscountAmount,
 		ShippingDiscountAmount: qm.ShippingDiscountAmount,
 		AdminFeeCalculation:    qm.AdminFeeCalculation,
-		//OrderQuoteItems:        QuoteItemRs{}.Transform(qm.OrderQuoteItem, qm.Merchant, infra),
-		OrderQuoteShipping: QuoteShippingRs{}.Transform(qm.OrderQuoteShipping, infra.Config.URL.BaseImageURL),
+		OrderQuoteShipping:     QuoteShippingRs{}.Transform(qm.OrderQuoteShipping, infra.Config.URL.BaseImageURL),
 	}
 
 	return &response

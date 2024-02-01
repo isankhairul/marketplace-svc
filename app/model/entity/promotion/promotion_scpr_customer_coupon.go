@@ -7,3 +7,7 @@ type PromotionScprCustomerCoupon struct {
 	MaxUsage        int    `json:"max_usage,omitempty"`
 	CreatedAt       int    `json:"created_at,omitempty"`
 }
+
+func (m PromotionScprCustomerCoupon) TableName() string {
+	return "promotion_scpr_customer_coupon"
+}

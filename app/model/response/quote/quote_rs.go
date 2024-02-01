@@ -1,8 +1,6 @@
 package responsequote
 
-import (
-	"encoding/json"
-)
+import "encoding/json"
 
 type QuoteRs struct {
 	ID                 uint64             `json:"id,omitempty"`

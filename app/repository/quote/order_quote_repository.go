@@ -13,6 +13,8 @@ type orderQuoteRepository struct {
 }
 
 type OrderQuoteRepository interface {
+	Create(dbc *base.DBContext, oq *entity.OrderQuote) (*entity.OrderQuote, error)
+	Save(dbc *base.DBContext, oq *entity.OrderQuote) (*entity.OrderQuote, error)
 	FindFirstByParams(dbc *base.DBContext, filter map[string]interface{}, isPreload bool) (*entity.OrderQuote, error)
 	FindByParams(dbc *base.DBContext, filter map[string]interface{}, isPreload bool, limit int, page int) (*[]entity.OrderQuote, *modelbase.Pagination, error)
 	UpdateByQuoteCode(dbc *base.DBContext, quoteCode string, data entity.OrderQuote) error
@@ -21,6 +23,30 @@ type OrderQuoteRepository interface {
 
 func NewOrderQuoteRepository(br base.BaseRepository) OrderQuoteRepository {
 	return &orderQuoteRepository{br}
+}
+
+func (r *orderQuoteRepository) Save(dbc *base.DBContext, oq *entity.OrderQuote) (*entity.OrderQuote, error) {
+	err := dbc.DB.WithContext(dbc.Context).Save(oq).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return oq, nil
+}
+
+func (r *orderQuoteRepository) Create(dbc *base.DBContext, oq *entity.OrderQuote) (*entity.OrderQuote, error) {
+	err := dbc.DB.WithContext(dbc.Context).Create(oq).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return oq, nil
 }
 
 func (r *orderQuoteRepository) FindFirstByParams(dbc *base.DBContext, filter map[string]interface{}, isPreload bool) (*entity.OrderQuote, error) {
@@ -35,9 +61,9 @@ func (r *orderQuoteRepository) FindFirstByParams(dbc *base.DBContext, filter map
 	if isPreload {
 		query = query.Preload("OrderQuoteAddress").
 			Preload("OrderQuotePayment").
-			Preload("OrderQuoteMerchant").
-			Preload("OrderQuoteMerchant.OrderQuoteItem").
-			Preload("OrderQuoteMerchant.OrderQuoteShipping")
+			Preload("OrderQuote").
+			Preload("OrderQuote.OrderQuoteItem").
+			Preload("OrderQuote.OrderQuoteShipping")
 	}
 
 	err := query.Omit("created_at,updated_at,converted_at,redeem,event,agent_id,data_source,has_cod,customer_data,data_source_value,qoute_type,total_point_bonus,total_point_discount,total_point_earned,total_point_spent,total_point_spent_conversion,subsidized_amount,scope,admin_fee,admin_fee_calculation,admin_fee_type,admin_fee_type_id").
@@ -73,9 +99,9 @@ func (r *orderQuoteRepository) FindByParams(dbc *base.DBContext, filter map[stri
 	if isPreload {
 		query = query.Preload("OrderQuoteAddress").
 			Preload("OrderQuotePayment").
-			Preload("OrderQuoteMerchant").
-			Preload("OrderQuoteMerchant.OrderQuoteItem").
-			Preload("OrderQuoteMerchant.OrderQuoteShipping")
+			Preload("OrderQuote").
+			Preload("OrderQuote.OrderQuoteItem").
+			Preload("OrderQuote.OrderQuoteShipping")
 	}
 
 	err := query.Scopes(r.Paginate(orderQuotes, &pagination, query)).

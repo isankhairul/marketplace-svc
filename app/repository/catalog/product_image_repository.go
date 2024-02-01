@@ -1,4 +1,4 @@
-package merchant
+package repository
 
 import (
 	"errors"
@@ -32,11 +32,10 @@ func (r *merchantProductRepository) FindFirstByParams(dbc *base.DBContext, filte
 		}
 	}
 	if isPreload {
-		query = query.Debug()
+		query = query.Preload("MerchantProductPrice")
 	}
 
 	err := query.
-		Preload("MerchantProductPrice").
 		Order("id DESC").
 		Find(&merchantProduct).Error
 

@@ -60,7 +60,7 @@ type OrderQuote struct {
 	AdminFeeType              string                `json:"admin_fee_type,omitempty"`
 	AdminFeeTypeID            int                   `json:"admin_fee_type_id,omitempty"`
 	DataSourceValue           string                `json:"data_source_value,omitempty"`
-	DataReceipt               *json.RawMessage      `json:"data_receipt,omitempty"`
+	DataReceipt               json.RawMessage       `json:"data_receipt,omitempty"`
 	OrderQuoteAddress         *OrderQuoteAddress    `gorm:"foreignKey:quote_id;references:id"`
 	OrderQuotePayment         *OrderQuotePayment    `gorm:"foreignKey:quote_id;references:id"`
 	OrderQuoteMerchant        *[]OrderQuoteMerchant `gorm:"foreignKey:quote_id;references:id;"`

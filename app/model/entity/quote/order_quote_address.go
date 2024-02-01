@@ -39,11 +39,11 @@ func (p Point) Scan(val interface{}) (err error) {
 }
 
 type OrderQuoteAddress struct {
-	ID                    int64     `json:"id,omitempty"`
-	QuoteID               int64     `json:"quote_id,omitempty"`
+	ID                    uint64    `json:"id,omitempty"`
+	QuoteID               uint64    `json:"quote_id,omitempty"`
 	ContactID             string    `json:"contact_id,omitempty"`
 	SaveInAddressBook     bool      `json:"save_in_address_book,omitempty"`
-	CustomerAddressID     int       `json:"customer_address_id,omitempty"`
+	CustomerAddressID     uint64    `json:"customer_address_id,omitempty"`
 	AddressTypeID         int       `json:"address_type_id,omitempty"`
 	Email                 string    `json:"email,omitempty"`
 	ReceiverName          string    `json:"receiver_name,omitempty"`
@@ -62,8 +62,6 @@ type OrderQuoteAddress struct {
 	PostcodeID            int       `json:"postcode_id,omitempty"`
 	DiscountDescription   string    `json:"discount_description,omitempty"`
 	BonusPointDescription string    `json:"bonus_point_description,omitempty"`
-	Latitude              float64   `json:"latitude,omitempty"`
-	Longitude             float64   `json:"longitude,omitempty"`
 	Coordinate            string    `json:"coordinate,omitempty"`
 	Province              string    `json:"province,omitempty"`
 	City                  string    `json:"city,omitempty"`

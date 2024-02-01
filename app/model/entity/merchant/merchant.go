@@ -1,6 +1,9 @@
 package entity
 
-import "time"
+import (
+	"marketplace-svc/app/model/entity"
+	"time"
+)
 
 type Merchant struct {
 	ID                       uint64             `json:"id"`
@@ -42,6 +45,8 @@ type Merchant struct {
 	MerchantShipping         []MerchantShipping `gorm:"foreignKey:merchant_id;references:id" json:"-"`
 	MerchantStores           []MerchantStores   `gorm:"foreignKey:merchant_id;references:id;"`
 	MerchantProduct          []MerchantProduct  `gorm:"foreignKey:merchant_id;references:id;"`
+	Province                 entity.Province    `gorm:"foreignKey:id;references:province_id;"`
+	City                     entity.City        `gorm:"foreignKey:id;references:city_id;"`
 }
 
 func (m Merchant) TableName() string {

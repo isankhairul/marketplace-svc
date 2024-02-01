@@ -55,6 +55,7 @@ type JWTInfo struct {
 	ID            string `json:"-"`
 	IsVerified    bool   `json:"-"`
 	CustomerID    int64  `json:"-"`
+	GroupID       int    `json:"-"`
 }
 
 func GetJWTInfoFromContext(ctx context.Context, cfg *config.JwtConfig) (*JWTPayload, error) {
@@ -134,14 +135,23 @@ func ExtractToken(bearerToken string) (*JWTInfo, error) {
 	} else {
 		claimsJWT.ActorAvatar = fmt.Sprintf("%v", avatar)
 	}
+	var groupID int
+	var customerID int64
+	if tmpGroupID, ok := mapClaims["group_id"]; ok {
+		groupID = int(tmpGroupID.(float64))
+	}
+	if tmpCustomerID, ok := mapClaims["customer_id"]; ok {
+		customerID = int64(tmpCustomerID.(float64))
+	}
+
 	claimsJWT.ActorName = fmt.Sprintf("%v", mapClaims["full_name"])
 	claimsJWT.ActorUID = fmt.Sprintf("%v", mapClaims["sub"])
 	claimsJWT.ActorIDLegacy = fmt.Sprintf("%v", mapClaims["user_id_legacy"])
 	claimsJWT.Phone = fmt.Sprintf("%v", mapClaims["phone"])
 	claimsJWT.Email = fmt.Sprintf("%v", mapClaims["email"])
 	claimsJWT.ID = fmt.Sprintf("%v", claimID)
-	intCustomerID, _ := strconv.ParseInt(claimsJWT.ID, 10, 64)
-	claimsJWT.CustomerID = intCustomerID
+	claimsJWT.CustomerID = customerID
+	claimsJWT.GroupID = groupID
 
 	return &claimsJWT, nil
 }
