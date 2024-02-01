@@ -13,6 +13,8 @@ type orderQuoteMerchantRepository struct {
 }
 
 type OrderQuoteMerchantRepository interface {
+	Create(dbc *base.DBContext, merchant *entity.OrderQuoteMerchant) (*entity.OrderQuoteMerchant, error)
+	Save(dbc *base.DBContext, merchant *entity.OrderQuoteMerchant) (*entity.OrderQuoteMerchant, error)
 	FindFirstByParams(dbc *base.DBContext, filter map[string]interface{}, isPreload bool) (*entity.OrderQuoteMerchant, error)
 	FindByParams(dbc *base.DBContext, filter map[string]interface{}, isPreload bool, limit int, page int) (*[]entity.OrderQuoteMerchant, *modelbase.Pagination, error)
 	UpdateByID(dbc *base.DBContext, id uint64, data entity.OrderQuoteMerchant) error
@@ -20,6 +22,30 @@ type OrderQuoteMerchantRepository interface {
 
 func NewOrderQuoteMerchantRepository(br base.BaseRepository) OrderQuoteMerchantRepository {
 	return &orderQuoteMerchantRepository{br}
+}
+
+func (r *orderQuoteMerchantRepository) Save(dbc *base.DBContext, merchant *entity.OrderQuoteMerchant) (*entity.OrderQuoteMerchant, error) {
+	err := dbc.DB.WithContext(dbc.Context).Save(merchant).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+		return nil, err
+	}
+
+	return merchant, nil
+}
+
+func (r *orderQuoteMerchantRepository) Create(dbc *base.DBContext, merchant *entity.OrderQuoteMerchant) (*entity.OrderQuoteMerchant, error) {
+	err := dbc.DB.WithContext(dbc.Context).Create(merchant).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+		return nil, err
+	}
+
+	return merchant, nil
 }
 
 func (r *orderQuoteMerchantRepository) FindFirstByParams(dbc *base.DBContext, filter map[string]interface{}, isPreload bool) (*entity.OrderQuoteMerchant, error) {
@@ -38,7 +64,7 @@ func (r *orderQuoteMerchantRepository) FindFirstByParams(dbc *base.DBContext, fi
 		}
 	}
 	if isPreload {
-		query = query.Debug().
+		query = query.
 			//Preload("OrderQuoteItem").
 			//Preload("OrderQuoteItem.ProductFlat", func(db *gorm.DB) *gorm.DB {
 			//	return db.Select("sku", "is_active", "status", "slug", "name")
@@ -95,7 +121,7 @@ func (r *orderQuoteMerchantRepository) FindByParams(dbc *base.DBContext, filter 
 	}
 
 	if isPreload {
-		query = query.Debug().
+		query = query.
 			//Preload("OrderQuoteItem").
 			//Preload("OrderQuoteItem.ProductFlat", func(db *gorm.DB) *gorm.DB {
 			//	return db.Select("sku", "is_active", "status", "slug", "name")
@@ -107,7 +133,13 @@ func (r *orderQuoteMerchantRepository) FindByParams(dbc *base.DBContext, filter 
 			//	return db.Select("product_id", "image_thumbnail", "image").Where("is_default=1 and status=true")
 			//}).
 			Preload("Merchant", func(db *gorm.DB) *gorm.DB {
-				return db.Select("id", "merchant_name", "merchant_code", "image", "province_id")
+				return db.Select("id,merchant_name,merchant_code,image,province_id,city_id")
+			}).
+			Preload("Merchant.Province", func(db *gorm.DB) *gorm.DB {
+				return db.Select("id,name")
+			}).
+			Preload("Merchant.City", func(db *gorm.DB) *gorm.DB {
+				return db.Select("id,name")
 			}).
 			Preload("OrderQuoteShipping").
 			Preload("OrderQuoteShipping.ShippingProvider", func(db *gorm.DB) *gorm.DB {
@@ -118,7 +150,7 @@ func (r *orderQuoteMerchantRepository) FindByParams(dbc *base.DBContext, filter 
 			})
 	}
 
-	err := query.Omit("created_at,updated_at,merchant_total_quantity,merchant_total_weight,merchant_total_point_earned,merchant_total_point_spent,event,redeem").
+	err := query.Omit("created_at,updated_at,merchant_total_point_earned,merchant_total_point_spent,event,redeem").
 		Scopes(r.Paginate(orderQuotes, &pagination, query)).
 		Order("id DESC").
 		Find(&orderQuotes).

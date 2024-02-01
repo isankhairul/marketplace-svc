@@ -38,19 +38,22 @@ func (s QuoteReceiptTransform) TransformQuote(ctx context.Context, quote *entity
 	dbc := repository.DBContext{DB: s.baseRepo.GetDB(), Context: ctx}
 	quoteMerchantRepo := repoquote.NewOrderQuoteMerchantRepository(s.baseRepo)
 	qms, _, err := quoteMerchantRepo.FindByParams(&dbc, map[string]interface{}{"quote_id": quote.ID}, false, 20, 1)
-	if qms != nil && err == nil {
+	if err != nil {
+		s.infra.Log.WithContext(ctx).Error(err)
+	}
+	if qms != nil {
 		for _, q := range *qms {
 			arrQuoteMerchantID = append(arrQuoteMerchantID, q.ID)
 		}
 	}
 
+	var wg sync.WaitGroup
+	// there are 4 process: get payment, merchant, address, item
+	wg.Add(4)
+
 	// get quote payment
 	chanQuotePayment := make(chan []responsequote.QuotePaymentRs, 1)
 	defer close(chanQuotePayment)
-	var wg sync.WaitGroup
-	// there are 3 process: get payment, merchant, address
-	wg.Add(4)
-
 	go func() {
 		defer wg.Done()
 		s.asyncGetQuotePayment(ctx, quote.ID, chanQuotePayment)
@@ -141,7 +144,7 @@ func (s QuoteReceiptTransform) TransformQuote(ctx context.Context, quote *entity
 		OrderQuotePayment:  &quotePayment,
 		OrderQuoteMerchant: &quoteMerchant,
 		OrderQuoteAddress:  &quoteAddress,
-		OrderQuoteReceipt:  quote.DataReceipt,
+		OrderQuoteReceipt:  &quote.DataReceipt,
 	}
 
 	return &quoteRs
@@ -155,11 +158,12 @@ func (s QuoteReceiptTransform) asyncGetQuotePayment(ctx context.Context, quoteID
 	}
 	quotePayment, err := quotePaymentRepo.FindFirstByParams(&dbc, filter, true)
 	if err != nil {
+		s.infra.Log.WithContext(ctx).Error(err)
 		chanQ <- nil
 		return
 	}
+
 	chanQ <- responsequote.QuotePaymentRs{}.Transform(quotePayment, s.infra.Config.URL.BaseImageURL)
-	return
 }
 
 func (s QuoteReceiptTransform) asyncGetQuoteAddress(ctx context.Context, quoteID uint64, chanQ chan<- []responsequote.QuoteAddressRs) {
@@ -170,11 +174,11 @@ func (s QuoteReceiptTransform) asyncGetQuoteAddress(ctx context.Context, quoteID
 	}
 	quoteAddress, err := quoteAddressRepo.FindFirstByParams(&dbc, filter)
 	if err != nil || quoteAddress == nil {
+		s.infra.Log.WithContext(ctx).Error(err)
 		chanQ <- nil
 		return
 	}
 	chanQ <- responsequote.QuoteAddressRs{}.Transform(quoteAddress)
-	return
 }
 
 func (s QuoteReceiptTransform) asyncGetQuoteMerchant(ctx context.Context, quoteID uint64, chanQ chan<- []responsequote.QuoteMerchantRs) {
@@ -183,11 +187,13 @@ func (s QuoteReceiptTransform) asyncGetQuoteMerchant(ctx context.Context, quoteI
 	filter := map[string]interface{}{
 		"quote_id": quoteID,
 	}
-	quoteMerchant, _, err := quoteMerchantRepo.FindByParams(&dbc, filter, true, 100, 1)
+	quoteMerchant, _, err := quoteMerchantRepo.FindByParams(&dbc, filter, true, 50, 1)
 	if err != nil || quoteMerchant == nil {
+		s.infra.Log.WithContext(ctx).Error(err)
 		chanQ <- nil
 		return
 	}
+
 	var quoteMerchants []responsequote.QuoteMerchantRs
 	if quoteMerchant != nil && len(*quoteMerchant) > 0 {
 		lenMerchant := len(*quoteMerchant)
@@ -201,7 +207,6 @@ func (s QuoteReceiptTransform) asyncGetQuoteMerchant(ctx context.Context, quoteI
 				quoteMerchantRs := *responsequote.QuoteMerchantRs{}.Transform(&qm, s.infra)
 
 				chanQM <- quoteMerchantRs
-				return
 			}(qm)
 		}
 		wg.Wait()
@@ -213,7 +218,6 @@ func (s QuoteReceiptTransform) asyncGetQuoteMerchant(ctx context.Context, quoteI
 	}
 
 	chanQ <- quoteMerchants
-	return
 }
 
 func (s QuoteReceiptTransform) asyncGetQuoteItem(ctx context.Context, arrQuoteMerchantID []uint64, chanQ chan<- []responsequote.QuoteItemRs) {
@@ -225,8 +229,9 @@ func (s QuoteReceiptTransform) asyncGetQuoteItem(ctx context.Context, arrQuoteMe
 
 	dbc := repository.DBContext{DB: s.baseRepo.GetDB(), Context: ctx}
 	quoteItemRepo := repoquote.NewOrderQuoteItemRepository(s.baseRepo)
-	quoteItem, err := quoteItemRepo.FindRawByQuoteMerchantID(&dbc, arrQuoteMerchantID)
-	if err != nil || quoteItem == nil {
+	quoteItem, err := quoteItemRepo.FindRawByParams(&dbc, map[string]interface{}{"arr_quote_merchant_id": arrQuoteMerchantID})
+	if err != nil {
+		s.infra.Log.WithContext(ctx).Error(err)
 		chanQ <- nil
 		return
 	}
@@ -249,7 +254,8 @@ func (s QuoteReceiptTransform) asyncGetQuoteItem(ctx context.Context, arrQuoteMe
 					"merchant_sku": qi.MerchantSku,
 				}
 				mp, err := mpRepo.FindFirstByParams(&dbc, filterMp, true)
-				if err != nil {
+				if err != nil || mp == nil {
+					chanQI <- responsequote.QuoteItemRs{}
 					return
 				}
 				arrCategory, _ := pcRepo.GetCategoryMenu(&dbc, qi.ProductID, 1)
@@ -271,5 +277,4 @@ func (s QuoteReceiptTransform) asyncGetQuoteItem(ctx context.Context, arrQuoteMe
 	}
 
 	chanQ <- quoteItems
-	return
 }

@@ -21,3 +21,7 @@ type PromotionCatalog struct {
 	FdsRule              string    `json:"fds_rule"`
 	ConditionsElastic    string    `json:"conditions_elastic"`
 }
+
+func (m PromotionCatalog) TableName() string {
+	return "promotion_catalog"
+}

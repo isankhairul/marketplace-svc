@@ -60,6 +60,16 @@ var (
 	UserPending                       = Message{Code: 400, Message: "Akun anda masih pending"}
 	AddressNotFound                   = Message{Code: 400, Message: "Address Not Found"}
 	MerchantProductSearchSortNotFound = Message{Code: 400, Message: "The sort only distance or fulfill"}
+
+	// quote
+	QuoteQtyInvalid                = Message{Code: 400, Message: "ubah Keranjang Gagal, quantity tidak boleh 0 atau minus"}
+	QuoteRequiredMerchantID        = Message{Code: 400, Message: "merchant_id is required"}
+	QuoteRequiredMerchantSKU       = Message{Code: 400, Message: "merchant_sku is required"}
+	QuoteRequiredPaymentID         = Message{Code: 400, Message: "payment_method_id is required"}
+	QuoteRequiredCustomerAddressID = Message{Code: 400, Message: "customer_address_id is required"}
+	QuoteProductNotFound           = Message{Code: 400, Message: "product tidak tersedia"}
+	QuotePaymentMethodNotFound     = Message{Code: 400, Message: "metode pembayaran tidak tersedia"}
+	QuoteCustomerAddressNotFound   = Message{Code: 400, Message: "customer_address not found"}
 )
 
 var TelErrUserNotFound = Message{Code: 34000, Message: "Not found"}

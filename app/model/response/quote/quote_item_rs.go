@@ -20,7 +20,7 @@ type QuoteItemRs struct {
 	Image                 string   `json:"image,omitempty"`
 	ItemNotes             string   `json:"item_notes,omitempty"`
 	Weight                float64  `json:"weight,omitempty"`
-	Quantity              int      `json:"quantity,omitempty"`
+	Quantity              int32    `json:"quantity,omitempty"`
 	Stock                 int      `json:"stock,omitempty"`
 	MaxQty                int      `json:"max_qty,omitempty"`
 	GlobalMaxQty          int      `json:"global_max_qty,omitempty"`

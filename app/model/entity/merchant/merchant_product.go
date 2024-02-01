@@ -27,3 +27,23 @@ type MerchantProduct struct {
 func (m MerchantProduct) TableName() string {
 	return "merchant_product"
 }
+
+type DetailMerchantProduct struct {
+	ID                     uint64     `json:"id"`
+	Sku                    string     `json:"sku"`
+	MerchantSku            string     `json:"merchant_sku"`
+	MerchantIncludedItem   bool       `json:"merchant_included_item"`
+	Name                   string     `json:"name"`
+	Slug                   string     `json:"slug"`
+	Weight                 float64    `json:"weight"`
+	BrandCode              string     `json:"brand_code"`
+	BasePoint              int        `json:"base_point"`
+	BasePrice              float64    `json:"base_price"`
+	ProductType            string     `json:"product_type"`
+	AttributeSetID         int        `json:"attribute_set_id"`
+	RewardPointSellProduct int        `json:"reward_point_sell_product"`
+	SpecialPriceStartTime  *time.Time `json:"special_price_start_time"`
+	SpecialPriceEndTime    *time.Time `json:"special_price_end_time"`
+	SellingPrice           float64    `json:"selling_price"`
+	SpecialPrice           float64    `json:"special_price"`
+}

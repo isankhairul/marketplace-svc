@@ -30,8 +30,8 @@ type OrderQuoteShipping struct {
 	DeliveryDate                *time.Time              `json:"delivery_date,omitempty"`
 	ShippingWeight              float64                 `json:"shipping_weight,omitempty"`
 	HasCod                      int                     `json:"has_cod,omitempty"`
-	ShippingStartTime           *time.Time              `json:"shipping_start_time,omitempty"`
-	ShippingEndTime             *time.Time              `json:"shipping_end_time,omitempty"`
+	ShippingStartTime           *string                 `json:"shipping_start_time,omitempty"`
+	ShippingEndTime             *string                 `json:"shipping_end_time,omitempty"`
 	ShippingProvider            entity.ShippingProvider `gorm:"foreignKey:shipping_provider_id;references:id" json:"-,omitempty"`
 }
 

@@ -25,8 +25,8 @@ type QuoteShippingRs struct { //nolint:maligned
 	ShippingRate                  float64    `json:"shipping_rate"`
 	ShippingWeight                int        `json:"shipping_weight"`
 	DeliveryDate                  *time.Time `json:"delivery_date"`
-	ShippingStartTime             *time.Time `json:"shipping_start_time,omitempty"`
-	ShippingEndTime               *time.Time `json:"shipping_end_time,omitempty"`
+	ShippingStartTime             *string    `gorm:"type:time" json:"shipping_start_time,omitempty"`
+	ShippingEndTime               *string    `gorm:"type:time" json:"shipping_end_time,omitempty"`
 	ShippingNotice                string     `json:"shipping_notice"`
 	HasCod                        int        `json:"has_cod,omitempty"`
 }

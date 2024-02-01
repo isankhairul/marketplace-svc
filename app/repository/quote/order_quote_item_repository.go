@@ -10,6 +10,7 @@ import (
 	entity "marketplace-svc/app/model/entity/quote"
 	base "marketplace-svc/app/repository"
 	"marketplace-svc/pkg/util"
+	"strings"
 )
 
 type orderQuoteItemRepository struct {
@@ -17,14 +18,40 @@ type orderQuoteItemRepository struct {
 }
 
 type OrderQuoteItemRepository interface {
+	Create(dbc *base.DBContext, oqi *entity.OrderQuoteItem) (*entity.OrderQuoteItem, error)
+	Save(dbc *base.DBContext, oqi *entity.OrderQuoteItem) (*entity.OrderQuoteItem, error)
 	FindFirstByParams(dbc *base.DBContext, filter map[string]interface{}, isPreload bool) (*entity.OrderQuoteItem, error)
 	FindByParams(dbc *base.DBContext, filter map[string]interface{}, isPreload bool, limit int, page int) (*[]entity.OrderQuoteItem, *modelbase.Pagination, error)
 	UpdateByID(dbc *base.DBContext, id uint64, data entity.OrderQuoteItem) error
-	FindRawByQuoteMerchantID(dbc *base.DBContext, arrQuoteMerchantID []uint64) (*[]entity.OrderQuoteItem, error)
+	FindRawByParams(dbc *base.DBContext, filter map[string]interface{}) (*[]entity.OrderQuoteItem, error)
 }
 
 func NewOrderQuoteItemRepository(br base.BaseRepository) OrderQuoteItemRepository {
 	return &orderQuoteItemRepository{br}
+}
+
+func (r *orderQuoteItemRepository) Create(dbc *base.DBContext, oqi *entity.OrderQuoteItem) (*entity.OrderQuoteItem, error) {
+	err := dbc.DB.WithContext(dbc.Context).Create(oqi).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+		return nil, err
+	}
+
+	return oqi, nil
+}
+
+func (r *orderQuoteItemRepository) Save(dbc *base.DBContext, oqi *entity.OrderQuoteItem) (*entity.OrderQuoteItem, error) {
+	err := dbc.DB.WithContext(dbc.Context).Save(oqi).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+		return nil, err
+	}
+
+	return oqi, nil
 }
 
 func (r *orderQuoteItemRepository) FindFirstByParams(dbc *base.DBContext, filter map[string]interface{}, isPreload bool) (*entity.OrderQuoteItem, error) {
@@ -41,9 +68,12 @@ func (r *orderQuoteItemRepository) FindFirstByParams(dbc *base.DBContext, filter
 		if key == "arr_quote_merchant_id" && v != "" {
 			query = query.Where("quote_merchant_id in ?", v.([]string))
 		}
+		if key == "merchant_sku" && v != "" {
+			query = query.Where("merchant_sku = ?", v.(string))
+		}
 	}
 	if isPreload {
-		query = query.Debug().
+		query = query.
 			Preload("ProductFlat", func(db *gorm.DB) *gorm.DB {
 				return db.Select("sku", "is_active", "status", "slug", "name")
 			}).
@@ -86,7 +116,7 @@ func (r *orderQuoteItemRepository) FindByParams(dbc *base.DBContext, filter map[
 		}
 	}
 	if isPreload {
-		query = query.Debug().
+		query = query.
 			Preload("ProductFlat", func(db *gorm.DB) *gorm.DB {
 				return db.Select("sku", "is_active", "status", "slug", "name")
 			}).
@@ -115,9 +145,25 @@ func (r *orderQuoteItemRepository) FindByParams(dbc *base.DBContext, filter map[
 	return &orderQuotes, &pagination, nil
 }
 
-func (r *orderQuoteItemRepository) FindRawByQuoteMerchantID(dbc *base.DBContext, arrQuoteMerchantID []uint64) (*[]entity.OrderQuoteItem, error) {
+func (r *orderQuoteItemRepository) FindRawByParams(dbc *base.DBContext, filter map[string]interface{}) (*[]entity.OrderQuoteItem, error) {
 	var orderQuoteItems []entity.OrderQuoteItem
 	var orderQuoteItemsJoin []entity.OrderQuoteItemJoin
+	var arrWhere []string
+	for key, v := range filter {
+		if key == "arr_quote_merchant_id" && v != "" {
+			arrWhere = append(arrWhere, fmt.Sprintf(" quote_merchant_id in (%s) ", util.IntToString(v.([]uint64))))
+		}
+		if key == "quote_merchant_id" && v != "" {
+			arrWhere = append(arrWhere, fmt.Sprintf(" quote_merchant_id = %s ", fmt.Sprint(v.(uint64))))
+		}
+		if key == "merchant_id" && v != "" {
+			arrWhere = append(arrWhere, fmt.Sprintf(" merchant_id = %s ", fmt.Sprint(v.(uint64))))
+		}
+		if key == "merchant_sku" && v != "" {
+			arrWhere = append(arrWhere, fmt.Sprintf(" merchant_sku = '%s' ", fmt.Sprint(v.(string))))
+		}
+	}
+
 	query := dbc.DB.WithContext(dbc.Context)
 	err := query.Raw(
 		fmt.Sprintf(
@@ -131,8 +177,8 @@ func (r *orderQuoteItemRepository) FindRawByQuoteMerchantID(dbc *base.DBContext,
 			inner join merchant m on oqm.merchant_id = m.id
 			inner join product_flat pf on oqi.product_sku = pf.sku and store_id=1
 			inner join product p on oqi.product_id = p.id
-			where oqi.quote_merchant_id in (%s)
-			limit 50`, util.IntToString(arrQuoteMerchantID))).
+			where %s
+			limit 50`, strings.Join(arrWhere, " and "))).
 		Find(&orderQuoteItemsJoin).
 		Error
 	if err != nil {

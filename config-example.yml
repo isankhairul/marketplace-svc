@@ -86,10 +86,12 @@ security:
     key-len: 30
 
 kalcare-api:
-  server: https://kd-api.medkomtek-stg.com/mp/v3
+  server: https://apis.medkomtek-stg.com/mp/v3/kalmosh
   endpoint-auth: /auth/cms
   endpoint-queue: /temp_order_status_queue
   endpoint-webhook: /registered-webhook
+  endpoint-shipping-rate-duration: /shipping/shipping-rate/{id}/merchant/{merchant_id}/duration/{duration_id}
+  endpoint-shipping-rate-provider: /shipping/shipping-rate/{id}/merchant/{merchant_id}/provider/{duration_id}
   user-cred:
   pass-cred:
   client-id: "client.cms-mocha-stg.backoffice"

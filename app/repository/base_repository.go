@@ -64,7 +64,8 @@ func (br *baseRepository) BeginTx() *gorm.DB {
 
 func (br *baseRepository) Paginate(value interface{}, pagination *base.Pagination, db *gorm.DB) func(db *gorm.DB) *gorm.DB {
 	var totalRecords int64
-	db.Model(value).Count(&totalRecords)
+	db.Debug().Model(value).Select(1).Count(&totalRecords)
+	//db.Debug().Model(value).Count(&totalRecords)
 
 	pagination.TotalRecords = totalRecords
 	pagination.TotalPage = int(math.Ceil(float64(totalRecords) / float64(pagination.GetLimit())))

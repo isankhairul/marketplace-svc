@@ -131,7 +131,7 @@ func SetErrorResponse(ctx context.Context, msg message.Message, errs error) inte
 			Code:          msg.Code,
 			Message:       msg.Message,
 		},
-		Errors: errs,
+		Errors: errs.Error(),
 	}
 }
 

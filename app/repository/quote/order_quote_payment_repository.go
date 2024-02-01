@@ -16,6 +16,9 @@ type OrderQuotePaymentRepository interface {
 	FindFirstByParams(dbc *base.DBContext, filter map[string]interface{}, isPreload bool) (*entity.OrderQuotePayment, error)
 	FindByParams(dbc *base.DBContext, filter map[string]interface{}, isPreload bool, limit int, page int) (*[]entity.OrderQuotePayment, *modelbase.Pagination, error)
 	UpdateByID(dbc *base.DBContext, id uint64, data entity.OrderQuotePayment) error
+	DeleteByID(dbc *base.DBContext, id uint64) error
+	Create(dbc *base.DBContext, oqi *entity.OrderQuotePayment) (*entity.OrderQuotePayment, error)
+	Save(dbc *base.DBContext, oqi *entity.OrderQuotePayment) (*entity.OrderQuotePayment, error)
 }
 
 func NewOrderQuotePaymentRepository(br base.BaseRepository) OrderQuotePaymentRepository {
@@ -36,7 +39,7 @@ func (r *orderQuotePaymentRepository) FindFirstByParams(dbc *base.DBContext, fil
 	}
 
 	if isPreload {
-		query = query.Debug().
+		query = query.
 			Preload("PaymentMethod", func(db *gorm.DB) *gorm.DB {
 				return db.Select("id", "code", "payment_method_type_id", "name", "logo")
 			}).
@@ -50,7 +53,7 @@ func (r *orderQuotePaymentRepository) FindFirstByParams(dbc *base.DBContext, fil
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, err
+			return nil, nil
 		}
 		return nil, err
 	}
@@ -76,7 +79,7 @@ func (r *orderQuotePaymentRepository) FindByParams(dbc *base.DBContext, filter m
 	}
 
 	if isPreload {
-		query = query.Debug().
+		query = query.
 			Preload("PaymentMethod", func(db *gorm.DB) *gorm.DB {
 				return db.Select("id", "code", "payment_method_type_id", "name", "logo")
 			}).
@@ -110,6 +113,41 @@ func (r *orderQuotePaymentRepository) UpdateByID(dbc *base.DBContext, id uint64,
 		Select("*").Omit("id", "created_at").
 		Where("id = ?", id).
 		Updates(data).
+		Error
+	return err
+}
+
+func (r *orderQuotePaymentRepository) Create(dbc *base.DBContext, oqa *entity.OrderQuotePayment) (*entity.OrderQuotePayment, error) {
+	err := dbc.DB.WithContext(dbc.Context).Create(oqa).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+		return nil, err
+	}
+
+	return oqa, nil
+}
+
+func (r *orderQuotePaymentRepository) Save(dbc *base.DBContext, oqa *entity.OrderQuotePayment) (*entity.OrderQuotePayment, error) {
+	err := dbc.DB.WithContext(dbc.Context).Save(oqa).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+		return nil, err
+	}
+
+	return oqa, nil
+}
+
+func (r *orderQuotePaymentRepository) DeleteByID(dbc *base.DBContext, id uint64) error {
+	if id == 0 {
+		return errors.New("id is required")
+	}
+	err := dbc.DB.WithContext(dbc.Context).
+		Where("id = ?", id).
+		Delete(entity.OrderQuotePayment{}).
 		Error
 	return err
 }

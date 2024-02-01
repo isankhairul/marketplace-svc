@@ -18,3 +18,7 @@ type PromotionCatalogProductPrice struct {
 	ToTime                    time.Time `json:"to_time"`
 	CreatedAt                 time.Time `json:"created_at"`
 }
+
+func (m PromotionCatalogProductPrice) TableName() string {
+	return "promotion_catalog_product_price"
+}
