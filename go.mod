@@ -37,6 +37,7 @@ require (
 	golang.org/x/sync v0.3.0
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/gorm v1.25.4
+	moul.io/http2curl v1.0.0
 )
 
 require (

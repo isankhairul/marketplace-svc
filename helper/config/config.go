@@ -2,6 +2,9 @@ package config
 
 import (
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -54,16 +57,18 @@ type ElasticConfig struct {
 }
 
 type KalcareAPI struct {
-	Server               string `mapstructure:"server"`
-	EndpointAuth         string `mapstructure:"endpoint-auth"`
-	EndpointQueue        string `mapstructure:"endpoint-queue"`
-	EndpointWebhook      string `mapstructure:"endpoint-webhook"`
-	EndpointCustomerInfo string `mapstructure:"endpoint-customer-info"`
-	ClientID             string `mapstructure:"client-id"`
-	CancelHours          int    `mapstructure:"cancel-hours"`
-	CancelMinutes        int    `mapstructure:"cancel-minutes"`
-	PostInterval         int    `mapstructure:"post-interval"`
-	PostMinutes          int    `mapstructure:"post-minutes"`
+	Server                       string `mapstructure:"server"`
+	EndpointAuth                 string `mapstructure:"endpoint-auth"`
+	EndpointQueue                string `mapstructure:"endpoint-queue"`
+	EndpointWebhook              string `mapstructure:"endpoint-webhook"`
+	EndpointCustomerInfo         string `mapstructure:"endpoint-customer-info"`
+	EndpointShippingRateDuration string `mapstructure:"endpoint-shipping-rate-duration"`
+	EndpointShippingRateProvider string `mapstructure:"endpoint-shipping-rate-provider"`
+	ClientID                     string `mapstructure:"client-id"`
+	CancelHours                  int    `mapstructure:"cancel-hours"`
+	CancelMinutes                int    `mapstructure:"cancel-minutes"`
+	PostInterval                 int    `mapstructure:"post-interval"`
+	PostMinutes                  int    `mapstructure:"post-minutes"`
 }
 
 type DBLogConfig struct {
@@ -134,4 +139,32 @@ type User struct {
 
 type Share struct {
 	BaseURL string `mapstructure:"base-url"`
+}
+
+func GetConfigString(conf string) string {
+	if strings.HasPrefix(conf, "${") && strings.HasSuffix(conf, "}") {
+		return os.Getenv(strings.TrimSuffix(strings.TrimPrefix(conf, "${"), "}"))
+	}
+
+	return conf
+}
+
+func GetConfigInt(conf string) int {
+	if strings.HasPrefix(conf, "${") && strings.HasSuffix(conf, "}") {
+		result, _ := strconv.Atoi(os.Getenv(strings.TrimSuffix(strings.TrimPrefix(conf, "${"), "}")))
+		return result
+	}
+
+	result, _ := strconv.Atoi(conf)
+	return result
+}
+
+func GetConfigBool(conf string) bool {
+	if strings.HasPrefix(conf, "${") && strings.HasSuffix(conf, "}") {
+		result, _ := strconv.ParseBool(os.Getenv(strings.TrimSuffix(strings.TrimPrefix(conf, "${"), "}")))
+		return result
+	}
+
+	result, _ := strconv.ParseBool(conf)
+	return result
 }

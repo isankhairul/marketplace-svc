@@ -16,6 +16,7 @@ var (
 	ErrNoAuth        = Message{Code: 401, Message: "No Authorization"}
 	ErrDB            = Message{Code: 500, Message: "Error has been occurred while processing database request"}
 	ErrES            = Message{Code: 500, Message: "Error has been occurred while processing elasticsearch request"}
+	ErrThirdParty    = Message{Code: 400, Message: "Error call third party request"}
 )
 
 // Specific message
@@ -69,7 +70,8 @@ var (
 	QuoteRequiredCustomerAddressID = Message{Code: 400, Message: "customer_address_id is required"}
 	QuoteProductNotFound           = Message{Code: 400, Message: "product tidak tersedia"}
 	QuotePaymentMethodNotFound     = Message{Code: 400, Message: "metode pembayaran tidak tersedia"}
-	QuoteCustomerAddressNotFound   = Message{Code: 400, Message: "customer_address not found"}
+	QuoteCustomerAddressNotFound   = Message{Code: 400, Message: "alamat tidak ditemukan"}
+	QuoteShippingNotFound          = Message{Code: 400, Message: "pengiriman tidak tersedia"}
 )
 
 var TelErrUserNotFound = Message{Code: 34000, Message: "Not found"}
