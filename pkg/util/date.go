@@ -7,6 +7,7 @@ import (
 var (
 	LayoutDefault  = "2006-01-02 15:04:05"
 	LayoutDateOnly = "2006-01-02"
+	LayoutTimeOnly = "15:04:05"
 	Loc, _         = time.LoadLocation("Asia/Jakarta")
 )
 

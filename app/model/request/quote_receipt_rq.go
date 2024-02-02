@@ -37,9 +37,9 @@ func (req QuoteReceiptAddressRq) Validate() error {
 }
 
 type QuoteReceiptMerchantsRq struct {
-	MerchantID         uint64                 `json:"merchant_id"`
-	OrderQuoteItems    []QuoteReceiptItemsRq  `json:"orderQuoteItems"`
-	OrderQuoteShipping QuoteReceiptShippingRq `json:"orderQuoteShipping"`
+	MerchantID         uint64                  `json:"merchant_id"`
+	OrderQuoteItems    []QuoteReceiptItemsRq   `json:"orderQuoteItems"`
+	OrderQuoteShipping *QuoteReceiptShippingRq `json:"orderQuoteShipping"`
 }
 
 func (req QuoteReceiptMerchantsRq) Validate() error {
@@ -65,14 +65,15 @@ func (req QuoteReceiptItemsRq) Validate() error {
 }
 
 type QuoteReceiptShippingRq struct {
-	QuoteMerchantID            uint64 `json:"-"`
-	ShippingProviderDurationID uint64 `json:"shipping_provider_duration_id"`
-	ShippingProviderID         uint64 `json:"shipping_provider_id"`
+	QuoteMerchantID            uint64  `json:"-"`
+	MerchantID                 uint64  `json:"-"`
+	ShippingProviderDurationID uint64  `json:"shipping_provider_duration_id"`
+	ShippingProviderID         *uint64 `json:"shipping_provider_id"`
 }
 
 func (req QuoteReceiptShippingRq) Validate() error {
 	return validation.ValidateStruct(&req,
-		validation.Field(int64(req.ShippingProviderDurationID), validation.Required.Error("shipping_provider_duration_id is required")),
+		validation.Field(&req.ShippingProviderDurationID, validation.Required.Error("shipping_provider_duration_id is required")),
 	)
 }
 

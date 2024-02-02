@@ -1,10 +1,13 @@
 package helper
 
 import (
-	"io"
-
+	"context"
+	"fmt"
+	"github.com/bytedance/sonic"
 	"github.com/go-resty/resty/v2"
 	"gitlab.klik.doctor/platform/go-pkg/dapr/logger"
+	"io"
+	"time"
 )
 
 type HttpRC struct {
@@ -13,7 +16,6 @@ type HttpRC struct {
 }
 
 type FileReader struct {
-	//param, fileName string, reader io.Reader
 	Param    string
 	Filename string
 	Reader   io.Reader
@@ -26,6 +28,7 @@ type RCResponse struct {
 
 type IHttpRC interface {
 	Execute(
+		ctx context.Context,
 		method string, url string,
 		headers *map[string]string,
 		formData *map[string]string,
@@ -41,15 +44,22 @@ func NewHttpRC(rc *resty.Client, log logger.Logger) IHttpRC {
 	return &HttpRC{RC: rc, Logger: log}
 }
 
-func (rc *HttpRC) Execute(
+func (rc HttpRC) Execute(
+	ctx context.Context,
 	method string, url string,
 	headers *map[string]string,
 	formData *map[string]string,
 	fileReaders *[]FileReader,
 	body *[]byte,
 ) (*RCResponse, error) {
+	// set timeout
+	httpRC := rc.RC
+	httpRC.SetTimeout(3 * time.Minute)
 
-	request := rc.RC.R()
+	request := httpRC.R()
+
+	strFormData := ""
+	strBodyRequest := ""
 
 	// set headers
 	if headers != nil {
@@ -59,6 +69,8 @@ func (rc *HttpRC) Execute(
 	// set formData
 	if formData != nil {
 		request.SetFormData(*formData)
+		jsonFormData, _ := sonic.Marshal(*formData)
+		strFormData = string(jsonFormData)
 	}
 
 	// set fileReaders
@@ -71,10 +83,15 @@ func (rc *HttpRC) Execute(
 	// set body
 	if body != nil {
 		request.SetBody(*body)
+		strBodyRequest = string(*body)
 	}
 
 	// execute
 	resp, err := request.Execute(method, url)
+	responseBody := resp.Body()
 
-	return &RCResponse{Body: resp.Body(), Response: resp}, err
+	//Log CURL
+	rc.Logger.WithContext(ctx).Info(fmt.Sprintf("url: %s, request: %s %s, response: %s", url, strBodyRequest, strFormData, string(responseBody)))
+
+	return &RCResponse{Body: responseBody, Response: resp}, err
 }

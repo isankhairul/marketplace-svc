@@ -6,10 +6,10 @@ import (
 )
 
 type QuoteShippingRs struct { //nolint:maligned
-	ShippingProviderID            int64      `json:"shipping_provider_id"`
+	ShippingProviderID            uint64     `json:"shipping_provider_id"`
 	ShippingProviderName          string     `json:"shipping_provider_name"`
 	InsuranceFeeIncluded          bool       `json:"insurance_fee_included"`
-	ShippingProviderDurationID    int        `json:"shipping_provider_duration_id"`
+	ShippingProviderDurationID    uint64     `json:"shipping_provider_duration_id"`
 	ShippingLogo                  string     `json:"shipping_logo"`
 	ShippingProviderDurationName  string     `json:"shipping_provider_duration_name"`
 	ShippingProviderDuration      string     `json:"shipping_provider_duration"`

@@ -6,14 +6,14 @@ import (
 )
 
 type OrderQuoteShipping struct {
-	ID                          int64                   `json:"id,omitempty"`
-	QuoteMerchantID             int                     `json:"quote_merchant_id,omitempty"`
+	ID                          uint64                  `json:"id,omitempty"`
+	QuoteMerchantID             uint64                  `json:"quote_merchant_id,omitempty"`
 	FreeShipping                bool                    `json:"free_shipping,omitempty"`
-	ShippingProviderID          int64                   `json:"shipping_provider_id,omitempty"`
-	ShippingProviderDurationID  int                     `json:"shipping_provider_duration_id,omitempty"`
-	ShippingCostActual          int                     `json:"shipping_cost_actual,omitempty"`
-	ShippingCostSubsidized      int                     `json:"shipping_cost_subsidized,omitempty"`
-	ShippingRate                int                     `json:"shipping_rate,omitempty"`
+	ShippingProviderID          uint64                  `json:"shipping_provider_id,omitempty"`
+	ShippingProviderDurationID  uint64                  `json:"shipping_provider_duration_id,omitempty"`
+	ShippingCostActual          float64                 `json:"shipping_cost_actual,omitempty"`
+	ShippingCostSubsidized      float64                 `json:"shipping_cost_subsidized,omitempty"`
+	ShippingRate                float64                 `json:"shipping_rate,omitempty"`
 	ShippingQuantifier          string                  `json:"shipping_quantifier,omitempty"`
 	CreatedAt                   time.Time               `json:"created_at,omitempty"`
 	UpdatedAt                   time.Time               `json:"updated_at,omitempty"`

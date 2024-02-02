@@ -3,11 +3,10 @@ package base
 import (
 	"context"
 	"github.com/bytedance/sonic"
+	"gitlab.klik.doctor/platform/go-pkg/dapr/logger"
+	"marketplace-svc/helper/message"
 	"net/http"
 	"reflect"
-
-	"marketplace-svc/helper/logger"
-	"marketplace-svc/helper/message"
 )
 
 // swagger:model SuccessResponse
@@ -96,7 +95,7 @@ func SetHttpResponse(ctx context.Context, msg message.Message, result interface{
 
 	return responseHttp{
 		Meta: MetaResponse{
-			CorrelationId: logger.GetTraceIdentifier(ctx),
+			CorrelationId: logger.GetTraceID(ctx),
 			Code:          msg.Code,
 			Message:       msg.Message,
 			Pagination:    paging,
@@ -117,7 +116,7 @@ func GetHttpResponse(resp interface{}) *responseHttp {
 func SetDefaultResponse(ctx context.Context, msg message.Message) interface{} {
 	return responseHttp{
 		Meta: MetaResponse{
-			CorrelationId: logger.GetTraceIdentifier(ctx),
+			CorrelationId: logger.GetTraceID(ctx),
 			Code:          msg.Code,
 			Message:       msg.Message,
 		},
@@ -127,7 +126,7 @@ func SetDefaultResponse(ctx context.Context, msg message.Message) interface{} {
 func SetErrorResponse(ctx context.Context, msg message.Message, errs error) interface{} {
 	return responseHttp{
 		Meta: MetaResponse{
-			CorrelationId: logger.GetTraceIdentifier(ctx),
+			CorrelationId: logger.GetTraceID(ctx),
 			Code:          msg.Code,
 			Message:       msg.Message,
 		},

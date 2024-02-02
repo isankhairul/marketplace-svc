@@ -13,13 +13,40 @@ type orderQuoteShippingRepository struct {
 }
 
 type OrderQuoteShippingRepository interface {
+	Create(dbc *base.DBContext, oqs *entity.OrderQuoteShipping) (*entity.OrderQuoteShipping, error)
+	Save(dbc *base.DBContext, oqs *entity.OrderQuoteShipping) (*entity.OrderQuoteShipping, error)
 	FindFirstByParams(dbc *base.DBContext, filter map[string]interface{}) (*entity.OrderQuoteShipping, error)
 	FindByParams(dbc *base.DBContext, filter map[string]interface{}, limit int, page int) (*[]entity.OrderQuoteShipping, *modelbase.Pagination, error)
 	UpdateByID(dbc *base.DBContext, id uint64, data entity.OrderQuoteShipping) error
+	DeleteByID(dbc *base.DBContext, id uint64) error
 }
 
 func NewOrderQuoteShippingRepository(br base.BaseRepository) OrderQuoteShippingRepository {
 	return &orderQuoteShippingRepository{br}
+}
+
+func (r *orderQuoteShippingRepository) Create(dbc *base.DBContext, oqs *entity.OrderQuoteShipping) (*entity.OrderQuoteShipping, error) {
+	err := dbc.DB.WithContext(dbc.Context).Create(oqs).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+		return nil, err
+	}
+
+	return oqs, nil
+}
+
+func (r *orderQuoteShippingRepository) Save(dbc *base.DBContext, oqs *entity.OrderQuoteShipping) (*entity.OrderQuoteShipping, error) {
+	err := dbc.DB.WithContext(dbc.Context).Save(oqs).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+		return nil, err
+	}
+
+	return oqs, nil
 }
 
 func (r *orderQuoteShippingRepository) FindFirstByParams(dbc *base.DBContext, filter map[string]interface{}) (*entity.OrderQuoteShipping, error) {
@@ -40,7 +67,7 @@ func (r *orderQuoteShippingRepository) FindFirstByParams(dbc *base.DBContext, fi
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, err
+			return nil, nil
 		}
 		return nil, err
 	}
@@ -90,6 +117,17 @@ func (r *orderQuoteShippingRepository) UpdateByID(dbc *base.DBContext, id uint64
 		Select("*").Omit("id", "created_at").
 		Where("id = ?", id).
 		Updates(data).
+		Error
+	return err
+}
+
+func (r *orderQuoteShippingRepository) DeleteByID(dbc *base.DBContext, id uint64) error {
+	if id == 0 {
+		return errors.New("id is required")
+	}
+	err := dbc.DB.WithContext(dbc.Context).
+		Where("id = ?", id).
+		Delete(entity.OrderQuoteAddress{}).
 		Error
 	return err
 }
