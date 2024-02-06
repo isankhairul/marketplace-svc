@@ -34,6 +34,8 @@ url:
 server:
   port: 5700
   env: dev
+  image-suffix: ".webp"
+  salt-quote: "K4lb3AP1"
   log:
     level: info #debug, info, warn, error.
     output: console

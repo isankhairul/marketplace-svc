@@ -63,6 +63,7 @@ var (
 	MerchantProductSearchSortNotFound = Message{Code: 400, Message: "The sort only distance or fulfill"}
 
 	// quote
+	QuoteNotFound                  = Message{Code: 400, Message: "keranjang tidak ditemukan"}
 	QuoteQtyInvalid                = Message{Code: 400, Message: "ubah Keranjang Gagal, quantity tidak boleh 0 atau minus"}
 	QuoteRequiredMerchantID        = Message{Code: 400, Message: "merchant_id is required"}
 	QuoteRequiredMerchantSKU       = Message{Code: 400, Message: "merchant_sku is required"}
@@ -72,6 +73,7 @@ var (
 	QuotePaymentMethodNotFound     = Message{Code: 400, Message: "metode pembayaran tidak tersedia"}
 	QuoteCustomerAddressNotFound   = Message{Code: 400, Message: "alamat tidak ditemukan"}
 	QuoteShippingNotFound          = Message{Code: 400, Message: "pengiriman tidak tersedia"}
+	QuoteErrValidate               = Message{Code: 400, Message: "validation error"}
 )
 
 var TelErrUserNotFound = Message{Code: 34000, Message: "Not found"}

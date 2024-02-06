@@ -10,6 +10,7 @@ import (
 	repocatalog "marketplace-svc/app/repository/catalog"
 	repomerchant "marketplace-svc/app/repository/merchant"
 	repoquote "marketplace-svc/app/repository/quote"
+	"marketplace-svc/pkg/util"
 	"sync"
 )
 
@@ -32,7 +33,7 @@ func (s QuoteReceiptTransform) TransformQuote(ctx context.Context, quote *entity
 	if nil == quote {
 		return nil
 	}
-	var subTotal, totalQty, totalPointEarned, totalPointSpent, totalWeight, totalDiscount, grandTotal float64
+	var subTotal, totalQty, totalWeight, totalDiscount, grandTotal float64
 	var arrQuoteMerchantID []uint64
 
 	dbc := repository.DBContext{DB: s.baseRepo.GetDB(), Context: ctx}
@@ -116,8 +117,6 @@ func (s QuoteReceiptTransform) TransformQuote(ctx context.Context, quote *entity
 		if quoteItem.Selected {
 			subTotal += float64(float64(quoteItem.Quantity) * quoteItem.Price)
 			totalQty += float64(quoteItem.Quantity)
-			totalPointEarned += float64(quoteItem.PointEarned)
-			totalPointSpent += float64(quoteItem.PointSpent)
 			totalWeight += float64(float64(quoteItem.Quantity) * quoteItem.Weight)
 			totalDiscount += float64(quoteItem.DiscountAmount)
 		}
@@ -163,7 +162,7 @@ func (s QuoteReceiptTransform) asyncGetQuotePayment(ctx context.Context, quoteID
 		return
 	}
 
-	chanQ <- responsequote.QuotePaymentRs{}.Transform(quotePayment, s.infra.Config.URL.BaseImageURL)
+	chanQ <- responsequote.QuotePaymentRs{}.Transform(quotePayment, s.infra.Config.URL.BaseImageURL, s.infra.Config.Server.ImageSuffix)
 }
 
 func (s QuoteReceiptTransform) asyncGetQuoteAddress(ctx context.Context, quoteID uint64, chanQ chan<- []responsequote.QuoteAddressRs) {
@@ -264,6 +263,7 @@ func (s QuoteReceiptTransform) asyncGetQuoteItem(ctx context.Context, arrQuoteMe
 					firstProductImage := *qi.Product.ProductImage
 					image = s.infra.Config.URL.BaseImageURL + firstProductImage[0].ImageThumbnail
 				}
+				image = util.AddImageSuffix(image, s.infra.Config.Server.ImageSuffix)
 
 				chanQI <- *responsequote.QuoteItemRs{}.Transform(&qi, *qi.Merchant, *mp, arrCategory, image)
 			}(qi)

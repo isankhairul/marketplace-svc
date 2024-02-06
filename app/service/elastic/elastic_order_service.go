@@ -42,7 +42,7 @@ func (s elasticOrderServiceImpl) Search(ctx context.Context, input requestelasti
 	var brandResponse []map[string]interface{}
 	var pagination base.Pagination
 	msg := message.SuccessMsg
-	var customerID int64
+	var customerID uint64
 	user, isValid := middleware.IsAuthContext(ctx)
 	if isValid && user.CustomerID != 0 {
 		customerID = user.CustomerID

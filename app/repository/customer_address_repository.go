@@ -20,14 +20,20 @@ func NewCustomerAddressRepository(br BaseRepository) CustomerAddressRepository {
 
 func (r *customerAddressRepository) FindFirstByParams(dbc *DBContext, filter map[string]interface{}) (*entity.CustomerAddress, error) {
 	var customerAddress entity.CustomerAddress
-	query := dbc.DB.WithContext(dbc.Context).Table(customerAddress.TableName())
+	query := dbc.DB.Table(customerAddress.TableName())
 
 	for key, v := range filter {
 		if key == "customer_id" && v != "" {
-			query = query.Where("customer_id = ?", v.(int64))
+			query = query.Where("customer_id = ?", v.(uint64))
 		}
 		if key == "id" && v != "" {
 			query = query.Where("id = ?", v.(uint64))
+		}
+		if key == "is_default" && v != "" {
+			query = query.Where("is_default = ?", v.(int))
+		}
+		if key == "is_completed" && v != "" {
+			query = query.Where("is_completed = ?", v.(int))
 		}
 	}
 

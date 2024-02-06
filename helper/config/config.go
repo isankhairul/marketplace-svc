@@ -84,10 +84,12 @@ type URLConfig struct {
 }
 
 type ServerConfig struct {
-	Port      int           `mapstructure:"port"`
-	Env       string        `mapstructure:"env"`
-	LogConfig LogConfig     `mapstructure:"log"`
-	Timeout   time.Duration `mapstructure:"timeout" default:"10"`
+	Port        int           `mapstructure:"port"`
+	Env         string        `mapstructure:"env"`
+	LogConfig   LogConfig     `mapstructure:"log"`
+	Timeout     time.Duration `mapstructure:"timeout" default:"10"`
+	ImageSuffix string        `mapstructure:"image-suffix" default:".webp"`
+	SaltQuote   string        `mapstructure:"salt-quote" default:"secret"`
 }
 
 type LogConfig struct {

@@ -2,6 +2,7 @@ package responsequote
 
 import (
 	entity "marketplace-svc/app/model/entity/quote"
+	"marketplace-svc/pkg/util"
 	"time"
 )
 
@@ -31,7 +32,7 @@ type QuoteShippingRs struct { //nolint:maligned
 	HasCod                        int        `json:"has_cod,omitempty"`
 }
 
-func (qr QuoteShippingRs) Transform(qss *entity.OrderQuoteShipping, baseImageURL string) *QuoteShippingRs {
+func (qr QuoteShippingRs) Transform(qss *entity.OrderQuoteShipping, baseImageURL string, suffix string) *QuoteShippingRs {
 	var response QuoteShippingRs //nolint:prealloc
 	if qss == nil {
 		return nil
@@ -42,7 +43,7 @@ func (qr QuoteShippingRs) Transform(qss *entity.OrderQuoteShipping, baseImageURL
 		ShippingProviderName:          qss.ShippingProvider.Name,
 		ShippingProviderDurationID:    qss.ShippingProviderDurationID,
 		InsuranceFeeIncluded:          qss.InsuranceFeeIncluded,
-		ShippingLogo:                  baseImageURL + qss.ShippingProvider.Logo,
+		ShippingLogo:                  util.AddImageSuffix(baseImageURL+qss.ShippingProvider.Logo, suffix),
 		ShippingProviderDurationName:  qss.ShippingProvider.ShippingProviderDuration.Name,
 		ShippingProviderDuration:      qss.ShippingProvider.ShippingProviderDuration.Duration,
 		ShippingProviderDurationLabel: qss.ShippingProvider.ShippingProviderDuration.DurationLabel,

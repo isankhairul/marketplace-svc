@@ -32,9 +32,17 @@ type DetailMerchantProduct struct {
 	ID                     uint64     `json:"id"`
 	Sku                    string     `json:"sku"`
 	MerchantSku            string     `json:"merchant_sku"`
+	MerchantName           string     `json:"merchant_name"`
+	MerchantID             string     `json:"merchant_id"`
 	MerchantIncludedItem   bool       `json:"merchant_included_item"`
+	MerchantStatus         int        `json:"merchant_status"`
+	ProductStatus          int        `json:"product_status"`
+	ProductIsActive        int        `json:"product_is_active"`
+	MerchantProductStatus  int        `json:"merchant_product_status"`
+	MaxPurchaseQty         int        `json:"max_purchase_qty"`
 	Name                   string     `json:"name"`
 	Slug                   string     `json:"slug"`
+	Stock                  int32      `json:"stock"`
 	Weight                 float64    `json:"weight"`
 	BrandCode              string     `json:"brand_code"`
 	BasePoint              int        `json:"base_point"`

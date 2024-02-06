@@ -57,6 +57,15 @@ func (r *orderQuoteRepository) FindFirstByParams(dbc *base.DBContext, filter map
 		if key == "quote_code" && v != "" {
 			query = query.Where("LOWER(quote_code) = ?", v.(string))
 		}
+		if key == "customer_id" && v != "" {
+			query = query.Where("customer_id = ?", v.(uint64))
+		}
+		if key == "store_id" && v != "" {
+			query = query.Where("store_id = ?", v.(int))
+		}
+		if key == "order_type_id" && v != "" {
+			query = query.Where("order_type_id = ?", v.(int))
+		}
 	}
 	if isPreload {
 		query = query.Preload("OrderQuoteAddress").
@@ -67,11 +76,11 @@ func (r *orderQuoteRepository) FindFirstByParams(dbc *base.DBContext, filter map
 	}
 
 	err := query.Omit("created_at,updated_at,converted_at,redeem,event,agent_id,data_source,has_cod,customer_data,data_source_value,qoute_type,total_point_bonus,total_point_discount,total_point_earned,total_point_spent,total_point_spent_conversion,subsidized_amount,scope,admin_fee,admin_fee_calculation,admin_fee_type,admin_fee_type_id").
-		Find(&orderQuote).Error
+		First(&orderQuote).Error
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, err
+			return nil, nil
 		}
 		return nil, err
 	}
@@ -93,6 +102,15 @@ func (r *orderQuoteRepository) FindByParams(dbc *base.DBContext, filter map[stri
 		}
 		if key == "quote_id" && v != "" {
 			query = query.Where("id = ?", v.(uint64))
+		}
+		if key == "customer_id" && v != "" {
+			query = query.Where("customer_id = ?", v.(uint64))
+		}
+		if key == "store_id" && v != "" {
+			query = query.Where("store_id = ?", v.(int))
+		}
+		if key == "order_type_id" && v != "" {
+			query = query.Where("order_type_id = ?", v.(int))
 		}
 	}
 
