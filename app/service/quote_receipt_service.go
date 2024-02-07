@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/md5"
 	"errors"
 	"fmt"
 	"github.com/bytedance/sonic"
@@ -21,12 +22,18 @@ import (
 	"marketplace-svc/helper/message"
 	"marketplace-svc/pkg/util"
 	"strconv"
+	"strings"
+	"sync"
+	"time"
 )
 
 type QuoteReceiptService interface {
 	Find(ctx context.Context, quoteCode string, validate bool) (*responsequote.QuoteRs, message.Message, error)
 	CheckQuote(ctx context.Context, quoteCode string, quote *entityquote.OrderQuote) (*entityquote.OrderQuote, message.Message, error)
-	Save(ctx context.Context, input request.QuoteReceiptRq) (message.Message, error)
+	Save(ctx context.Context, quoteCode string, input request.QuoteReceiptRq) (message.Message, error)
+	Recalculate(ctx context.Context, quote *entityquote.OrderQuote, isPromo bool) (message.Message, error)
+	Create(ctx context.Context, input request.QuoteReceiptRq) (*responsequote.QuoteCreateRs, message.Message, error)
+	ItemsAvailability(ctx context.Context, quoteCode string) (message.Message, error)
 }
 
 type QuoteReceiptServiceImpl struct {
@@ -79,26 +86,30 @@ func (s *QuoteReceiptServiceImpl) CheckQuote(ctx context.Context, quoteCode stri
 		"order_type_id": s.OrderTypeID,
 		"customer_id":   user.CustomerID,
 	}
-	dbc := repository.DBContext{Context: context.Background(), DB: s.baseRepo.GetDB()}
+	dbc := repository.NewDBContext(s.baseRepo.GetDB(), context.Background())
 	if quote == nil {
-		quoteRs, err := s.quoteRepo.FindFirstByParams(&dbc, filter, false)
+		quoteRs, err := s.quoteRepo.FindFirstByParams(dbc, filter, false)
 		if err != nil {
 			s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " " + err.Error()))
 			return nil, message.ErrDB, err
 		}
 
 		if quoteRs == nil {
-			return nil, message.ErrNoData, err
+			return nil, message.QuoteNotFound, errors.New(message.QuoteNotFound.Message)
 		}
-
 		quote = quoteRs
 	}
+
+	if quote == nil {
+		return nil, message.QuoteNotFound, errors.New(message.QuoteNotFound.Message)
+	}
+
 	// update device_id
 	quote.DeviceID = uint8(deviceID)
 	dataUpdate := map[string]interface{}{
 		"device_id": quote.DeviceID,
 	}
-	err = s.quoteRepo.UpdateMapByQuoteCode(&dbc, quoteCode, dataUpdate)
+	err = s.quoteRepo.UpdateMapByQuoteCode(dbc, quoteCode, dataUpdate)
 	if err != nil {
 		fmt.Println("err", err.Error())
 		return nil, message.ErrDB, err
@@ -117,13 +128,94 @@ func (s QuoteReceiptServiceImpl) Find(ctx context.Context, quoteCode string, val
 	return response, message.SuccessMsg, nil
 }
 
-func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteReceiptRq) (message.Message, error) {
+func (s QuoteReceiptServiceImpl) Create(ctx context.Context, input request.QuoteReceiptRq) (*responsequote.QuoteCreateRs, message.Message, error) {
+	response := responsequote.QuoteCreateRs{}
+	errMsgPrefix := "QUOTE-CREATE"
+	// get user
+	user, _ := middleware.IsAuthContext(ctx)
+	storeID := 1
+
+	// check existing quote by customer_id
+	quote, _, err := s.checkExistingByCustomerID(ctx, storeID, user.CustomerID)
+	if err != nil {
+		s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " " + err.Error()))
+		return nil, message.ErrDB, err
+	}
+	if quote != nil {
+		// save in background
+		go func() {
+			input.QuoteCode = quote.QuoteCode
+			_, _ = s.Save(ctx, quote.QuoteCode, input)
+		}()
+
+		response.ID = quote.ID
+		response.QuoteCode = quote.QuoteCode
+		return &response, message.SuccessMsg, nil
+	}
+
+	// create quote
+	strCodeEncryption := fmt.Sprint(s.infra.Config.Server.SaltQuote) + fmt.Sprint(time.Now().Unix()) + fmt.Sprint(storeID)
+	quoteCode := md5.Sum([]byte(strCodeEncryption))
+	arrFullName := strings.Split(user.ActorName, " ")
+
+	quote = &entityquote.OrderQuote{}
+	quote.QuoteCode = fmt.Sprintf("%x", quoteCode)
+	quote.OrderTypeID = uint8(s.OrderTypeID)
+	quote.CustomerID = user.CustomerID
+	quote.StoreID = uint64(storeID)
+	quote.CustomerFirstname = arrFullName[0]
+	if len(arrFullName) > 1 {
+		quote.CustomerLastname = arrFullName[1]
+	}
+	quote.CustomerEmail = user.Email
+	quote.CustomerGroupID = user.GroupID
+
+	dbc := repository.NewDBContext(s.baseRepo.GetDB(), context.Background())
+	quote, err = s.quoteRepo.Create(dbc, quote)
+	if err != nil || quote == nil {
+		s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " " + err.Error()))
+		return nil, message.ErrDB, err
+	}
+
+	if quote != nil && input.OrderQuoteAddress == nil {
+		// save in background
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			// auto generate quote address
+			caRepo := repository.NewCustomerAddressRepository(s.baseRepo)
+			filterCustomerAddress := map[string]interface{}{
+				"customer_id":  user.CustomerID,
+				"is_default":   1,
+				"is_completed": 1,
+			}
+			dbc := repository.NewDBContext(s.baseRepo.GetDB(), context.Background())
+			ca, err := caRepo.FindFirstByParams(dbc, filterCustomerAddress)
+			if ca != nil && err == nil {
+				input.OrderQuoteAddress = &request.QuoteReceiptAddressRq{CustomerAddressID: ca.ID}
+			}
+
+			if len(input.OrderQuoteMerchants) > 0 || input.OrderQuotePayment != nil || input.OrderQuoteAddress != nil || input.OrderQuoteReceipt != nil {
+				input.QuoteCode = quote.QuoteCode
+				_, _ = s.Save(ctx, quote.QuoteCode, input)
+			}
+		}()
+		wg.Wait()
+	}
+
+	response.ID = quote.ID
+	response.QuoteCode = quote.QuoteCode
+
+	return &response, message.SuccessMsg, nil
+}
+
+func (s QuoteReceiptServiceImpl) Save(ctx context.Context, quoteCode string, input request.QuoteReceiptRq) (message.Message, error) {
 	msg := message.SuccessMsg
-	quoteCode := input.QuoteCode
 	errMsgPrefix := "QUOTE-SAVE"
 	quote, msg, err := s.CheckQuote(ctx, quoteCode, nil)
 	if err != nil {
-		s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " quote " + err.Error()))
+		s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " " + err.Error()))
 		return msg, err
 	}
 
@@ -134,6 +226,7 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 	if !s.isValidQty(ctx, input) {
 		return message.QuoteQtyInvalid, errors.New(message.QuoteQtyInvalid.Message)
 	}
+	var isRemoveShipping bool
 
 	if len(input.OrderQuoteMerchants) > 0 {
 		// map index use order_quote_merchant_id
@@ -141,7 +234,13 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 		quoteShippingMap := map[uint64]map[string]float64{}
 		var arrQuoteItemsRq []request.QuoteReceiptItemsRq
 		var arrQuoteShippingRq []request.QuoteReceiptShippingRq
-		dbc := repository.DBContext{Context: context.Background(), DB: s.baseRepo.GetDB()}
+		dbc := repository.NewDBContext(s.baseRepo.GetDB(), context.Background())
+
+		// remove existing quote merchant and item if add item
+		if input.OrderQuoteMerchants[0].OrderQuoteItems != nil && len(input.OrderQuoteMerchants[0].OrderQuoteItems) > 0 {
+			_ = s.RemoveExistingQuoteMerchant(ctx, quote.ID)
+			isRemoveShipping = true
+		}
 
 		// process quote merchant
 		for _, oqm := range input.OrderQuoteMerchants {
@@ -151,7 +250,7 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 			}
 
 			filterQuoteMerchant := map[string]interface{}{"quote_id": quote.ID, "merchant_id": oqm.MerchantID}
-			quoteMerchant, err := s.quoteMerchantRepo.FindFirstByParams(&dbc, filterQuoteMerchant, false)
+			quoteMerchant, err := s.quoteMerchantRepo.FindFirstByParams(dbc, filterQuoteMerchant, false)
 			if err != nil {
 				s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " get quoteMerchant " + err.Error()))
 				return message.ErrDB, errors.New(err.Error())
@@ -161,7 +260,7 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 			if quoteMerchant == nil {
 				quoteMerchant = &entityquote.OrderQuoteMerchant{}
 			}
-			merchant, err := s.merchantRepo.FindFirstByParams(&dbc, map[string]interface{}{"id": oqm.MerchantID}, false)
+			merchant, err := s.merchantRepo.FindFirstByParams(dbc, map[string]interface{}{"id": oqm.MerchantID}, false)
 			if err != nil {
 				s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " " + err.Error()))
 				return message.ErrDB, errors.New(err.Error())
@@ -177,7 +276,7 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 			quoteMerchant.QuoteID = quote.ID
 			quoteMerchant.MerchantID = merchant.ID
 			quoteMerchant.Selected = true
-			quoteMerchant, err = s.quoteMerchantRepo.Save(&dbc, quoteMerchant)
+			quoteMerchant, err = s.quoteMerchantRepo.Save(dbc, quoteMerchant)
 			if err != nil {
 				s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " quoteMerchant " + err.Error()))
 				return message.ErrDB, errors.New(err.Error())
@@ -210,7 +309,7 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 					"quote_merchant_id": qi.QuoteMerchantID,
 					"merchant_sku":      qi.MerchantSku,
 				}
-				quoteItem, err := s.quoteItemRepo.FindFirstByParams(&dbc, filterQuoteItem, false)
+				quoteItem, err := s.quoteItemRepo.FindFirstByParams(dbc, filterQuoteItem, false)
 				if err != nil {
 					s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " " + err.Error()))
 					return message.ErrDB, errors.New(err.Error())
@@ -220,7 +319,7 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 					"merchant_sku": qi.MerchantSku,
 					"store_id":     1,
 				}
-				product, err := s.merchantProductRepo.FindFirstDetailMerchantProduct(&dbc, filterProduct)
+				product, err := s.merchantProductRepo.FindFirstDetailMerchantProduct(dbc, filterProduct)
 				if err != nil {
 					s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " " + err.Error()))
 					return message.ErrDB, errors.New(err.Error())
@@ -266,7 +365,7 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 					"latest_start_date": dateTimeNowStr,
 					"earliest_end_date": dateTimeNowStr,
 				}
-				pcpp, err := pcppRepo.FindFirstByParams(&dbc, filterPromoCatalogProductPrice)
+				pcpp, err := pcppRepo.FindFirstByParams(dbc, filterPromoCatalogProductPrice)
 				if err != nil {
 					s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " get promo_catalog_product_price " + err.Error()))
 					return message.ErrDB, errors.New(err.Error())
@@ -275,7 +374,7 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 				var promoDescription interface{}
 				if pcpp != nil {
 					pcRepo := repopromo.NewPromotionCatalogRepository(s.baseRepo)
-					rule, err := pcRepo.FindFirstByParams(&dbc, map[string]interface{}{"id": pcpp.PromotionCatalogID})
+					rule, err := pcRepo.FindFirstByParams(dbc, map[string]interface{}{"id": pcpp.PromotionCatalogID})
 					if err != nil {
 						s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " get promo_catalog " + err.Error()))
 						return message.ErrDB, errors.New(err.Error())
@@ -316,7 +415,7 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 				quoteItem.RowTotal = float64(quoteItem.Quantity) * quoteItem.Price
 				quoteItem.RowWeight = float64(quoteItem.Quantity) * quoteItem.Weight
 				quoteItem.RowOriginalPrice = float64(quoteItem.Quantity) * quoteItem.OriginalPrice
-				_, err = s.quoteItemRepo.Save(&dbc, quoteItem)
+				_, err = s.quoteItemRepo.Save(dbc, quoteItem)
 
 				if err != nil {
 					s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " quoteItem " + err.Error()))
@@ -342,18 +441,13 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 					quoteItemsMap[qi.QuoteMerchantID] = mapItems
 				}
 			}
-
-			// trigger remove quote shipping
-			if input.OrderQuoteMerchants[0].OrderQuoteShipping == nil {
-				_, _ = s.RemoveQuoteShipping(ctx, quote.ID)
-			}
 		}
 
 		// process calculate quote shipping after finish process quote item
 		if len(arrQuoteShippingRq) > 0 {
-			dbc := repository.DBContext{Context: context.Background(), DB: s.baseRepo.GetDB()}
+			dbc := repository.NewDBContext(s.baseRepo.GetDB(), context.Background())
 			for _, qs := range arrQuoteShippingRq {
-				quoteMerchant, _ := s.quoteMerchantRepo.FindFirstByParams(&dbc, map[string]interface{}{"id": qs.QuoteMerchantID}, false)
+				quoteMerchant, _ := s.quoteMerchantRepo.FindFirstByParams(dbc, map[string]interface{}{"id": qs.QuoteMerchantID}, false)
 				if quoteMerchant != nil {
 					responseOQS, msg, err := s.ProcessQuoteShipping(ctx, &qs, *quoteMerchant)
 					if err != nil {
@@ -371,7 +465,7 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 		for quoteMerchantID, items := range quoteItemsMap {
 			if rowTotal, ok := items["row_total"]; ok {
 				filterQuoteMerchant := map[string]interface{}{"id": quoteMerchantID, "quote_id": quote.ID}
-				quoteMerchant, err := s.quoteMerchantRepo.FindFirstByParams(&dbc, filterQuoteMerchant, false)
+				quoteMerchant, err := s.quoteMerchantRepo.FindFirstByParams(dbc, filterQuoteMerchant, false)
 				if err != nil {
 					s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " quoteMerchant " + err.Error()))
 					return message.ErrDB, errors.New(err.Error())
@@ -380,7 +474,7 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 				quoteMerchant.MerchantSubtotal = rowTotal
 				quoteMerchant.MerchantTotalQuantity = int(items["qty"])
 				quoteMerchant.MerchantTotalWeight = items["row_weight"]
-				_, err = s.quoteMerchantRepo.Save(&dbc, quoteMerchant)
+				_, err = s.quoteMerchantRepo.Save(dbc, quoteMerchant)
 				if err != nil {
 					s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " save quoteMerchant " + err.Error()))
 					return message.ErrDB, errors.New(err.Error())
@@ -392,18 +486,17 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 		for quoteMerchantID, items := range quoteShippingMap {
 			if shippingAmount, ok := items["shipping_amount"]; ok {
 				filterQuoteMerchant := map[string]interface{}{"id": quoteMerchantID, "quote_id": quote.ID}
-				quoteMerchant, err := s.quoteMerchantRepo.FindFirstByParams(&dbc, filterQuoteMerchant, false)
+				quoteMerchant, err := s.quoteMerchantRepo.FindFirstByParams(dbc, filterQuoteMerchant, false)
 				if err != nil {
 					s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " get quoteMerchant " + err.Error()))
 					return message.ErrDB, errors.New(err.Error())
 				}
 				quoteMerchant.MerchantGrandTotal = quoteMerchant.MerchantGrandTotal + shippingAmount
-				_, err = s.quoteMerchantRepo.Save(&dbc, quoteMerchant)
+				_, err = s.quoteMerchantRepo.Save(dbc, quoteMerchant)
 				if err != nil {
 					s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " save quoteMerchant " + err.Error()))
 					return message.ErrDB, errors.New(err.Error())
 				}
-
 			}
 		}
 	}
@@ -415,13 +508,13 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 			return message.ValidationError, err
 		}
 
-		dbc := repository.DBContext{Context: ctx, DB: s.baseRepo.GetDB()}
+		dbc := repository.NewDBContext(s.baseRepo.GetDB(), context.Background())
 		caRepo := repository.NewCustomerAddressRepository(s.baseRepo)
 		filterCustomerAddress := map[string]interface{}{
 			"id":          input.OrderQuoteAddress.CustomerAddressID,
 			"customer_id": user.CustomerID,
 		}
-		ca, err := caRepo.FindFirstByParams(&dbc, filterCustomerAddress)
+		ca, err := caRepo.FindFirstByParams(dbc, filterCustomerAddress)
 		if err != nil {
 			s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " customer_address " + err.Error()))
 			return msg, err
@@ -431,10 +524,10 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 		}
 
 		// delete existing
-		arrQuoteAddress, _, _ := s.quoteAddressRepo.FindByParams(&dbc, map[string]interface{}{"quote_id": quote.ID}, 5, 1)
+		arrQuoteAddress, _, _ := s.quoteAddressRepo.FindByParams(dbc, map[string]interface{}{"quote_id": quote.ID}, 5, 1)
 		if arrQuoteAddress != nil {
 			for _, qa := range *arrQuoteAddress {
-				_ = s.quoteAddressRepo.DeleteByID(&dbc, qa.ID)
+				_ = s.quoteAddressRepo.DeleteByID(dbc, qa.ID)
 			}
 		}
 		coordinate := ""
@@ -459,14 +552,13 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 			CustomerNotes:     ca.Notes,
 		}
 		// save address
-		_, err = s.quoteAddressRepo.Create(&dbc, &quoteAddress)
+		_, err = s.quoteAddressRepo.Create(dbc, &quoteAddress)
 		if err != nil {
 			s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " save quote_address " + err.Error()))
 			return msg, err
 		}
 
-		// trigger remove quote shipping
-		_, _ = s.RemoveQuoteShipping(ctx, quote.ID)
+		isRemoveShipping = true
 	}
 
 	// process quote payment
@@ -475,9 +567,9 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 		if err := input.OrderQuotePayment.Validate(); err != nil {
 			return message.ValidationError, err
 		}
-		dbc := repository.DBContext{Context: ctx, DB: s.baseRepo.GetDB()}
+		dbc := repository.NewDBContext(s.baseRepo.GetDB(), context.Background())
 
-		oqp, err := s.quotePaymentRepo.FindFirstByParams(&dbc, map[string]interface{}{"quote_id": quote.ID}, false)
+		oqp, err := s.quotePaymentRepo.FindFirstByParams(dbc, map[string]interface{}{"quote_id": quote.ID}, false)
 		if err != nil {
 			s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " quote_payment " + err.Error()))
 			return msg, err
@@ -487,7 +579,7 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 		}
 
 		pmRepo := repository.NewPaymentMethodRepository(s.baseRepo)
-		pm, err := pmRepo.FindFirstByParams(&dbc, map[string]interface{}{"id": input.OrderQuotePayment.PaymentMethodID})
+		pm, err := pmRepo.FindFirstByParams(dbc, map[string]interface{}{"id": input.OrderQuotePayment.PaymentMethodID})
 		if err != nil {
 			s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " quote_payment payment method " + err.Error()))
 			return msg, err
@@ -497,7 +589,7 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 		}
 		oqp.PaymentMethodID = pm.ID
 		oqp.QuoteID = quote.ID
-		_, err = s.quotePaymentRepo.Save(&dbc, oqp)
+		_, err = s.quotePaymentRepo.Save(dbc, oqp)
 
 		if err != nil {
 			s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " save quote_payment " + err.Error()))
@@ -508,10 +600,10 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 	// process quote receipt
 	if input.OrderQuoteReceipt != nil {
 		jsonDataReceipt, err := sonic.Marshal(input.OrderQuoteReceipt)
-		dbc := repository.DBContext{Context: ctx, DB: s.baseRepo.GetDB()}
+		dbc := repository.NewDBContext(s.baseRepo.GetDB(), context.Background())
 		if err == nil {
 			quote.DataReceipt = jsonDataReceipt
-			err = s.quoteRepo.UpdateByQuoteCode(&dbc, quoteCode, *quote)
+			err = s.quoteRepo.UpdateByQuoteCode(dbc, quoteCode, *quote)
 			if err != nil {
 				s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " save data_receipt " + err.Error()))
 				return msg, err
@@ -519,32 +611,146 @@ func (s QuoteReceiptServiceImpl) Save(ctx context.Context, input request.QuoteRe
 		}
 	}
 
+	// trigger remove quote shipping
+	if isRemoveShipping {
+		_, _ = s.RemoveQuoteShipping(ctx, quote.ID)
+	}
 	// recalculate quote
-	_, _ = s.Recalculate(ctx, quote)
+	_, _ = s.Recalculate(ctx, quote, false)
 
 	return msg, nil
 }
 
-func (s QuoteReceiptServiceImpl) Recalculate(ctx context.Context, quote *entityquote.OrderQuote) (message.Message, error) {
+func (s QuoteReceiptServiceImpl) ItemsAvailability(ctx context.Context, quoteCode string) (message.Message, error) {
 	errMsgPrefix := "QUOTE-RECALCULATE"
-	dbc := repository.DBContext{Context: context.Background(), DB: s.baseRepo.GetDB()}
+	quote, msg, err := s.CheckQuote(ctx, quoteCode, nil)
+	if err != nil {
+		return msg, err
+	}
+	var arrMessage []string
+
+	dbc := repository.NewDBContext(s.baseRepo.GetDB(), context.Background())
+	filterQuoteMerchant := map[string]interface{}{"quote_id": quote.ID}
+	quoteMerchants, _, err := s.quoteMerchantRepo.FindByParams(dbc, filterQuoteMerchant, false, 100, 1)
+	if err != nil {
+		s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " " + err.Error()))
+		return message.ErrDB, err
+	}
+
+	if quoteMerchants != nil {
+		var arrQuoteMerchantID []uint64
+		for _, quoteMerchant := range *quoteMerchants {
+			arrQuoteMerchantID = append(arrQuoteMerchantID, quoteMerchant.ID)
+		}
+
+		// process recalculate quote item qty + price newest
+		filterQuoteItem := map[string]interface{}{"arr_quote_merchant_id": arrQuoteMerchantID}
+		quoteItems, _, err := s.quoteItemRepo.FindByParams(dbc, filterQuoteItem, false, 100, 1)
+		if quoteItems != nil && err == nil {
+			for _, quoteItem := range *quoteItems {
+				// only checking quote items selected=true
+				if !quoteItem.Selected {
+					continue
+				}
+
+				quoteMerchant, err := s.quoteMerchantRepo.FindFirstByParams(dbc, map[string]interface{}{"id": quoteItem.QuoteMerchantID}, false)
+				if err != nil {
+					s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " " + err.Error()))
+					return message.ErrDB, errors.New(err.Error())
+				}
+				filterProduct := map[string]interface{}{
+					"merchant_id":  quoteMerchant.MerchantID,
+					"merchant_sku": quoteItem.MerchantSku,
+					"store_id":     1,
+				}
+				merchantProduct, err := s.merchantProductRepo.FindFirstDetailMerchantProduct(dbc, filterProduct)
+				if err != nil {
+					s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " " + err.Error()))
+					return message.ErrDB, errors.New(err.Error())
+				}
+
+				// product not found or inactive
+				if merchantProduct == nil || merchantProduct.ProductStatus == 0 || merchantProduct.ProductIsActive == 0 || merchantProduct.MerchantProductStatus == 0 {
+					arrMessage = append(arrMessage, fmt.Sprintf("product: %s, tidak tersedia \n", quoteItem.Name))
+					continue
+				}
+
+				// merchant inactive
+				if merchantProduct.MerchantStatus == 0 {
+					arrMessage = append(arrMessage, fmt.Sprintf("merchant: %s, tidak tersedia \n", merchantProduct.MerchantStatus))
+					continue
+				}
+
+				// quantity greater than stock
+				if quoteItem.Quantity > merchantProduct.Stock {
+					arrMessage = append(arrMessage, fmt.Sprintf("product: %s, tidak tersedia, stok tidak mencukupi \n", quoteItem.Name))
+					continue
+				}
+
+				// quantity greater than max quantity
+				if merchantProduct.MaxPurchaseQty > 0 && quoteItem.Quantity > int32(merchantProduct.MaxPurchaseQty) {
+					arrMessage = append(arrMessage, fmt.Sprintf("product: %s, tidak tersedia, melebihi jumlah maksimum belanja \n", quoteItem.Name))
+				}
+			}
+		}
+
+		msg, err = s.Recalculate(ctx, quote, true)
+		if err != nil {
+			return msg, err
+		}
+	}
+
+	if len(arrMessage) > 0 {
+		return message.QuoteErrValidate, errors.New(strings.Join(arrMessage, ", "))
+	}
+
+	return message.SuccessMsg, nil
+}
+
+func (s QuoteReceiptServiceImpl) checkExistingByCustomerID(ctx context.Context, storeID int, customerID uint64) (*entityquote.OrderQuote, message.Message, error) {
+	errMsgPrefix := "QUOTE-CHECK-EXIST"
+	filter := map[string]interface{}{
+		"store_id":      storeID,
+		"order_type_id": s.OrderTypeID,
+		"customer_id":   customerID,
+	}
+	dbc := repository.NewDBContext(s.baseRepo.GetDB(), context.Background())
+	quote, err := s.quoteRepo.FindFirstByParams(dbc, filter, false)
+	if err != nil {
+		s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " " + err.Error()))
+		return nil, message.ErrDB, err
+	}
+
+	return quote, message.SuccessMsg, nil
+}
+
+func (s QuoteReceiptServiceImpl) Recalculate(ctx context.Context, quote *entityquote.OrderQuote, isPromo bool) (message.Message, error) {
+	errMsgPrefix := "QUOTE-RECALCULATE"
+	dbc := repository.NewDBContext(s.baseRepo.GetDB(), context.Background())
 
 	var subTotal, totalShippingAmount, totalWeight float64
 	var totalQty int
 
-	quoteMerchants, _, err := s.quoteMerchantRepo.FindByParams(&dbc, map[string]interface{}{"quote_id": quote.ID}, false, 100, 1)
+	// get user
+	user, _ := middleware.IsAuthContext(ctx)
+
+	quoteMerchants, _, err := s.quoteMerchantRepo.FindByParams(dbc, map[string]interface{}{"quote_id": quote.ID}, false, 100, 1)
 	if err != nil {
 		s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " get quote_shipping " + err.Error()))
 		return message.ErrDB, errors.New(err.Error())
 	}
 
-	if quoteMerchants != nil {
-		for _, quoteMerchant := range *quoteMerchants {
-			subTotal += quoteMerchant.MerchantSubtotal
-			totalQty += quoteMerchant.MerchantTotalQuantity
-			totalWeight += quoteMerchant.MerchantTotalWeight
+	if quoteMerchants != nil && len(*quoteMerchants) > 0 {
+		var arrQuoteMerchantID []uint64
+		quoteItemsMap := map[uint64]map[string]float64{}
 
-			quoteShipping, err := s.quoteShippingRepo.FindFirstByParams(&dbc, map[string]interface{}{"quote_merchant_id": quoteMerchant.ID})
+		// process recalculate shipping
+		// add to arrQuoteMerchantID for calculate quote item
+		for _, quoteMerchant := range *quoteMerchants {
+			arrQuoteMerchantID = append(arrQuoteMerchantID, quoteMerchant.ID)
+
+			// process quote shipping
+			quoteShipping, err := s.quoteShippingRepo.FindFirstByParams(dbc, map[string]interface{}{"quote_merchant_id": quoteMerchant.ID})
 			if err != nil {
 				s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " get quote_shipping " + err.Error()))
 				return message.ErrDB, errors.New(err.Error())
@@ -555,14 +761,179 @@ func (s QuoteReceiptServiceImpl) Recalculate(ctx context.Context, quote *entityq
 				totalShippingAmount = 0
 			}
 		}
+
+		// process recalculate quote item qty + price newest
+		filterQuoteItem := map[string]interface{}{"arr_quote_merchant_id": arrQuoteMerchantID}
+		quoteItems, _, err := s.quoteItemRepo.FindByParams(dbc, filterQuoteItem, false, 100, 1)
+		if quoteItems != nil && err == nil {
+			for _, quoteItem := range *quoteItems {
+				quoteMerchant, err := s.quoteMerchantRepo.FindFirstByParams(dbc, map[string]interface{}{"id": quoteItem.QuoteMerchantID}, false)
+				if err != nil {
+					s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " " + err.Error()))
+					return message.ErrDB, errors.New(err.Error())
+				}
+				filterProduct := map[string]interface{}{
+					"merchant_id":  quoteMerchant.MerchantID,
+					"merchant_sku": quoteItem.MerchantSku,
+					"store_id":     1,
+				}
+				merchantProduct, err := s.merchantProductRepo.FindFirstDetailMerchantProduct(dbc, filterProduct)
+				if err != nil {
+					s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " " + err.Error()))
+					return message.ErrDB, errors.New(err.Error())
+				}
+
+				// product not found
+				if merchantProduct == nil {
+					s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " " + message.QuoteProductNotFound.Message))
+					return message.QuoteProductNotFound, errors.New(message.QuoteProductNotFound.Message)
+				}
+
+				// start get promo price
+				pcppRepo := repopromo.NewPromotionCatalogProductPriceRepository(s.baseRepo)
+
+				dateTimeNow := util.TimeNow()
+				dateTimeNowStr := dateTimeNow.Format(util.LayoutDefault)
+				filterPromoCatalogProductPrice := map[string]interface{}{
+					"product_id":        quoteItem.ProductID,
+					"customer_group_id": user.GroupID,
+					"merchant_id":       quoteMerchant.MerchantID,
+					"store_id":          quote.StoreID,
+					"latest_start_date": dateTimeNowStr,
+					"earliest_end_date": dateTimeNowStr,
+				}
+				pcpp, err := pcppRepo.FindFirstByParams(dbc, filterPromoCatalogProductPrice)
+				if err != nil {
+					s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " get promo_catalog_product_price " + err.Error()))
+					return message.ErrDB, errors.New(err.Error())
+				}
+				var specialPrice float64
+				var promoDescription interface{}
+				if pcpp != nil {
+					pcRepo := repopromo.NewPromotionCatalogRepository(s.baseRepo)
+					rule, err := pcRepo.FindFirstByParams(dbc, map[string]interface{}{"id": pcpp.PromotionCatalogID})
+					if err != nil {
+						s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " get promo_catalog " + err.Error()))
+						return message.ErrDB, errors.New(err.Error())
+					}
+					if rule != nil {
+						specialPrice = pcpp.RulePrice
+						promoDescription = map[string]interface{}{
+							"quote_item_id":        quoteItem.ID,
+							"type":                 "regular",
+							"rule_id":              rule.ID,
+							"rule_name":            rule.Name,
+							"principal_data":       rule.PrincipalData,
+							"discount_type":        rule.SimpleAction,
+							"discount_type_amount": rule.DiscountAmount,
+							"price":                quoteItem.Price,
+							"original_price":       quoteItem.OriginalPrice,
+							"base_price":           quoteItem.BasePrice,
+						}
+					}
+				}
+				if merchantProduct.SpecialPrice != 0 &&
+					(merchantProduct.SpecialPriceStartTime != nil && dateTimeNow.After(*merchantProduct.SpecialPriceStartTime) &&
+						(merchantProduct.SpecialPriceEndTime != nil && merchantProduct.SpecialPriceEndTime.Before(dateTimeNow))) {
+					if specialPrice > 0 && merchantProduct.SpecialPrice < specialPrice {
+						specialPrice = merchantProduct.SpecialPrice
+						promoDescription = map[string]interface{}{}
+					}
+				}
+				// get special price
+				if specialPrice > 0 {
+					// set quote item price use promo
+					jsonPromoDescription, _ := sonic.Marshal(promoDescription)
+					quoteItem.Price = specialPrice
+					quoteItem.PromoDescription = string(jsonPromoDescription)
+				}
+				// end get promo price
+
+				// check availability stock if quantity is greater than stock and stock greater than 0 then value quantity equal stock
+				if merchantProduct.Stock > 0 && quoteItem.Quantity > merchantProduct.Stock {
+					quoteItem.Quantity = merchantProduct.Stock
+				}
+				// max qty
+				if merchantProduct.Stock > 0 && merchantProduct.MaxPurchaseQty > 0 && quoteItem.Quantity > int32(merchantProduct.MaxPurchaseQty) {
+					quoteItem.Quantity = int32(merchantProduct.MaxPurchaseQty)
+				}
+
+				// set selected false if stock and status 0
+				if merchantProduct.Stock == 0 || merchantProduct.ProductIsActive == 0 || merchantProduct.ProductStatus == 0 || merchantProduct.MerchantProductStatus == 0 {
+					quoteItem.Selected = false
+				}
+				fmt.Println("quoteItem.Selected", quoteItem.Selected)
+				quoteItem.RowTotal = float64(quoteItem.Quantity) * quoteItem.Price
+				quoteItem.RowWeight = float64(quoteItem.Quantity) * quoteItem.Weight
+				quoteItem.RowOriginalPrice = float64(quoteItem.Quantity) * quoteItem.OriginalPrice
+				_, err = s.quoteItemRepo.Save(dbc, &quoteItem)
+				if err != nil {
+					s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " quoteItem " + err.Error()))
+					return message.ErrDB, errors.New(err.Error())
+				}
+				if quoteItem.Selected {
+					// add to map
+					if items, ok := quoteItemsMap[quoteItem.QuoteMerchantID]; ok {
+						items["qty"] += float64(quoteItem.Quantity)
+						items["price"] += quoteItem.Price
+						items["weight"] += quoteItem.Weight
+						items["row_weight"] += quoteItem.RowWeight
+						items["row_total"] += quoteItem.RowTotal
+
+					} else {
+						mapItems := map[string]float64{
+							"qty":        float64(quoteItem.Quantity),
+							"price":      quoteItem.Price,
+							"weight":     quoteItem.Weight,
+							"row_weight": quoteItem.RowWeight,
+							"row_total":  quoteItem.RowTotal,
+						}
+						quoteItemsMap[quoteItem.QuoteMerchantID] = mapItems
+					}
+				}
+			}
+		}
+
+		// calculate quote merchant total
+		for quoteMerchantID, items := range quoteItemsMap {
+			if rowTotal, ok := items["row_total"]; ok {
+				filterQuoteMerchant := map[string]interface{}{"id": quoteMerchantID, "quote_id": quote.ID}
+				quoteMerchant, err := s.quoteMerchantRepo.FindFirstByParams(dbc, filterQuoteMerchant, false)
+				if err != nil {
+					s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " quoteMerchant " + err.Error()))
+					return message.ErrDB, errors.New(err.Error())
+				}
+				quoteMerchant.MerchantGrandTotal = rowTotal
+				quoteMerchant.MerchantSubtotal = rowTotal
+				quoteMerchant.MerchantTotalQuantity = int(items["qty"])
+				quoteMerchant.MerchantTotalWeight = items["row_weight"]
+				_, err = s.quoteMerchantRepo.Save(dbc, quoteMerchant)
+				if err != nil {
+					s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " save quoteMerchant " + err.Error()))
+					return message.ErrDB, errors.New(err.Error())
+				}
+
+				// for data quote
+				subTotal += quoteMerchant.MerchantSubtotal
+				totalQty += quoteMerchant.MerchantTotalQuantity
+				totalWeight += quoteMerchant.MerchantTotalWeight
+			}
+		}
+	}
+
+	// if not promo set discount to 0
+	if !isPromo {
+		quote.CouponCode = ""
+		quote.DiscountAmount = 0
+		quote.ShippingDiscountAmount = 0
 	}
 
 	quote.Subtotal = subTotal
-	quote.GrandTotal = quote.Subtotal + totalShippingAmount
+	quote.GrandTotal = (quote.Subtotal + totalShippingAmount) - quote.DiscountAmount - quote.ShippingDiscountAmount
 	quote.ShippingAmount = totalShippingAmount
 	quote.TotalQuantity = totalQty
 	quote.Weight = totalWeight
-	_, err = s.quoteRepo.Save(&dbc, quote)
+	_, err = s.quoteRepo.Save(dbc, quote)
 	if err != nil {
 		s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " get quote_shipping " + err.Error()))
 		return message.ErrDB, errors.New(err.Error())
@@ -574,14 +945,14 @@ func (s QuoteReceiptServiceImpl) Recalculate(ctx context.Context, quote *entityq
 func (s QuoteReceiptServiceImpl) ProcessQuoteShipping(ctx context.Context, input *request.QuoteReceiptShippingRq, quoteMerchant entityquote.OrderQuoteMerchant) (*map[uint64]map[string]float64, message.Message, error) {
 	response := map[uint64]map[string]float64{}
 	errMsgPrefix := "QUOTE-SHIPPING"
-	dbc := repository.DBContext{Context: context.Background(), DB: s.baseRepo.GetDB()}
+	dbc := repository.NewDBContext(s.baseRepo.GetDB(), context.Background())
 
 	// validation
 	if err := input.Validate(); err != nil {
 		return nil, message.ValidationError, err
 	}
 
-	quoteShipping, err := s.quoteShippingRepo.FindFirstByParams(&dbc, map[string]interface{}{"quote_merchant_id": quoteMerchant.ID})
+	quoteShipping, err := s.quoteShippingRepo.FindFirstByParams(dbc, map[string]interface{}{"quote_merchant_id": quoteMerchant.ID})
 	if err != nil {
 		s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " get quote_shipping " + err.Error()))
 		return nil, message.ErrDB, errors.New(err.Error())
@@ -598,7 +969,7 @@ func (s QuoteReceiptServiceImpl) ProcessQuoteShipping(ctx context.Context, input
 	quoteShipping.ShippingProviderDurationID = input.ShippingProviderDurationID
 
 	if input.ShippingProviderID == nil {
-		shippingRateDurations, err := helperKalcare.GetShippingRateMerchantDuration(ctx, quoteMerchant.QuoteID, quoteMerchant.MerchantID, quoteMerchant.OrderQuoteShipping.ShippingProviderDurationID, header)
+		shippingRateDurations, err := helperKalcare.GetShippingRateMerchantDuration(ctx, quoteMerchant.QuoteID, quoteMerchant.MerchantID, quoteShipping.ShippingProviderDurationID, header)
 		if err != nil {
 			s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " get GetShippingRateMerchantDuration " + err.Error()))
 			return nil, message.ErrThirdParty, err
@@ -636,7 +1007,7 @@ func (s QuoteReceiptServiceImpl) ProcessQuoteShipping(ctx context.Context, input
 		quoteShipping.ShippingEndTime = &shippingRateProviders.Data.Records[0].ShippingEndTime
 	}
 	quoteShipping.InstanceDelivery = shippingRateProviders.Data.Records[0].InstanceDelivery
-	_, err = s.quoteShippingRepo.Save(&dbc, quoteShipping)
+	_, err = s.quoteShippingRepo.Save(dbc, quoteShipping)
 	if err != nil {
 		s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " save quote_shipping " + err.Error()))
 		return nil, message.ErrThirdParty, err
@@ -653,104 +1024,6 @@ func (s QuoteReceiptServiceImpl) ProcessQuoteShipping(ctx context.Context, input
 	}
 
 	return &response, message.SuccessMsg, nil
-}
-
-func (s QuoteReceiptServiceImpl) RecalculateQuoteShipping(ctx context.Context, quoteMerchant entityquote.OrderQuoteMerchant) (*map[uint64]map[string]float64, message.Message, error) {
-	response := map[uint64]map[string]float64{}
-	errMsgPrefix := "QUOTE-SHIPPING-RECALCULATE"
-	dbc := repository.DBContext{Context: context.Background(), DB: s.baseRepo.GetDB()}
-
-	// if recalculate only get from DB not input
-	quoteShipping, err := s.quoteShippingRepo.FindFirstByParams(&dbc, map[string]interface{}{"quote_merchant_id": quoteMerchant.ID})
-	if err != nil {
-		s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " get quote_shipping " + err.Error()))
-		return nil, message.ErrDB, errors.New(err.Error())
-	}
-	if quoteShipping == nil {
-		return nil, message.SuccessMsg, nil
-	}
-
-	helperKalcare := helper_kalcare.NewKalcareHelper(s.infra.Config.KalcareAPI, s.infra.Log)
-	token := ctx.Value(jwt.JWTContextKey)
-	header := map[string]string{
-		"Authorization": "Bearer " + token.(string),
-	}
-	quoteShipping.QuoteMerchantID = quoteMerchant.ID
-
-	if quoteShipping.ShippingProviderID == 0 {
-		shippingRateDurations, err := helperKalcare.GetShippingRateMerchantDuration(ctx, quoteMerchant.QuoteID, quoteMerchant.MerchantID, quoteMerchant.OrderQuoteShipping.ShippingProviderDurationID, header)
-		if err != nil {
-			s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " get GetShippingRateMerchantDuration " + err.Error()))
-			return nil, message.ErrThirdParty, err
-		}
-		if shippingRateDurations == nil || len(shippingRateDurations.Data.Records) == 0 {
-			return nil, message.QuoteShippingNotFound, errors.New(message.QuoteShippingNotFound.Message)
-		}
-		quoteShipping.ShippingProviderID = shippingRateDurations.Data.Records[0].ShippingProviderID
-	}
-
-	// shipping not found
-	if quoteShipping.ShippingProviderID == 0 {
-		return nil, message.QuoteShippingNotFound, errors.New(message.QuoteShippingNotFound.Message)
-	}
-
-	// get shipping by provider_id
-	shippingRateProviders, err := helperKalcare.GetShippingRateMerchantProvider(ctx, quoteMerchant.QuoteID, quoteMerchant.MerchantID, quoteShipping.ShippingProviderID, header)
-	if err != nil {
-		s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " get GetShippingRateMerchantProvider " + err.Error()))
-		return nil, message.ErrThirdParty, err
-	}
-	if shippingRateProviders == nil || len(shippingRateProviders.Data.Records) == 0 || shippingRateProviders.Data.Records[0].PriceKg < 0 {
-		return nil, message.QuoteShippingNotFound, errors.New(message.QuoteShippingNotFound.Message)
-	}
-
-	// assign quote shipping
-	quoteShipping.ShippingRate = shippingRateProviders.Data.Records[0].PriceKg
-	quoteShipping.ShippingCostActual = shippingRateProviders.Data.Records[0].ShippingCost
-	quoteShipping.InsuranceFeeIncluded = shippingRateProviders.Data.Records[0].InsuranceFeeIncluded
-	if shippingRateProviders.Data.Records[0].ShippingStartTime != "" {
-		quoteShipping.ShippingStartTime = &shippingRateProviders.Data.Records[0].ShippingStartTime
-	}
-	if shippingRateProviders.Data.Records[0].ShippingEndTime != "" {
-		quoteShipping.ShippingEndTime = &shippingRateProviders.Data.Records[0].ShippingEndTime
-	}
-	quoteShipping.InstanceDelivery = shippingRateProviders.Data.Records[0].InstanceDelivery
-	_, err = s.quoteShippingRepo.Save(&dbc, quoteShipping)
-	if err != nil {
-		s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " save quote_shipping " + err.Error()))
-		return nil, message.ErrThirdParty, err
-	}
-
-	// add to quoteShippingMap
-	if items, ok := response[quoteMerchant.ID]; ok {
-		items["shipping_amount"] += quoteShipping.ShippingCostActual
-	} else {
-		mapItems := map[string]float64{
-			"shipping_amount": quoteShipping.ShippingCostActual,
-		}
-		response[quoteMerchant.ID] = mapItems
-	}
-
-	return &response, message.SuccessMsg, nil
-}
-
-func (s QuoteReceiptServiceImpl) RemoveQuoteShipping(ctx context.Context, quoteID uint64) (message.Message, error) {
-	errMsgPrefix := "QUOTE-SHIPPING-REMOVE"
-	dbc := repository.DBContext{Context: context.Background(), DB: s.baseRepo.GetDB()}
-	quoteMerchants, _, err := s.quoteMerchantRepo.FindByParams(&dbc, map[string]interface{}{"quote_id": quoteID}, false, 100, 1)
-	if err != nil {
-		s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " get quote_shipping " + err.Error()))
-		return message.ErrDB, errors.New(err.Error())
-	}
-
-	if quoteMerchants != nil {
-		for _, quoteMerchant := range *quoteMerchants {
-			quoteShipping, _ := s.quoteShippingRepo.FindFirstByParams(&dbc, map[string]interface{}{"quote_merchant_id": quoteMerchant.ID})
-			_ = s.quoteShippingRepo.DeleteByID(&dbc, quoteShipping.ID)
-		}
-
-	}
-	return message.SuccessMsg, nil
 }
 
 func (s QuoteReceiptServiceImpl) isValidQty(ctx context.Context, input request.QuoteReceiptRq) bool {
@@ -768,4 +1041,98 @@ func (s QuoteReceiptServiceImpl) isValidQty(ctx context.Context, input request.Q
 	}
 
 	return true
+}
+
+func (s QuoteReceiptServiceImpl) RemoveQuoteShipping(ctx context.Context, quoteID uint64) (message.Message, error) {
+	errMsgPrefix := "QUOTE-SHIPPING-REMOVE"
+	dbc := repository.NewDBContext(s.baseRepo.GetDB(), context.Background())
+	quoteMerchants, _, err := s.quoteMerchantRepo.FindByParams(dbc, map[string]interface{}{"quote_id": quoteID}, false, 100, 1)
+	if err != nil {
+		s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " get quote_shipping " + err.Error()))
+		return message.ErrDB, errors.New(err.Error())
+	}
+
+	if quoteMerchants != nil {
+		for _, quoteMerchant := range *quoteMerchants {
+			quoteShipping, _ := s.quoteShippingRepo.FindFirstByParams(dbc, map[string]interface{}{"quote_merchant_id": quoteMerchant.ID})
+			if quoteShipping != nil {
+				_ = s.quoteShippingRepo.DeleteByID(dbc, quoteShipping.ID)
+			}
+		}
+	}
+	// trigger remove quote payment
+	_, _ = s.RemoveQuotePayment(ctx, quoteID)
+
+	return message.SuccessMsg, nil
+}
+
+func (s QuoteReceiptServiceImpl) RemoveQuotePayment(ctx context.Context, quoteID uint64) (message.Message, error) {
+	errMsgPrefix := "QUOTE-PAYMENT-REMOVE"
+	dbc := repository.NewDBContext(s.baseRepo.GetDB(), context.Background())
+	quotePayments, _, err := s.quotePaymentRepo.FindByParams(dbc, map[string]interface{}{"quote_id": quoteID}, false, 100, 1)
+	if err != nil {
+		s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " get quote_shipping " + err.Error()))
+		return message.ErrDB, errors.New(err.Error())
+	}
+
+	if quotePayments != nil {
+		for _, qm := range *quotePayments {
+			_ = s.quoteShippingRepo.DeleteByID(dbc, qm.ID)
+		}
+	}
+	return message.SuccessMsg, nil
+}
+
+func (s QuoteReceiptServiceImpl) RemoveExistingQuoteMerchant(ctx context.Context, quoteID uint64) error {
+	errMsgPrefix := "RemoveExistingQuoteMerchant"
+	dbc := repository.NewDBContext(s.baseRepo.GetDB(), context.Background())
+	dbc.TxBegin()
+	filterQuoteMerchant := map[string]interface{}{
+		"quote_id": quoteID,
+	}
+	quoteMerchants, _, err := s.quoteMerchantRepo.FindByParams(dbc, filterQuoteMerchant, false, 50, 1)
+	if err != nil {
+		s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " " + err.Error()))
+		return err
+	}
+
+	if quoteMerchants != nil {
+		var arrQuoteMerchantID []uint64
+
+		// delete quote merchant
+		for _, qm := range *quoteMerchants {
+			arrQuoteMerchantID = append(arrQuoteMerchantID, qm.ID)
+			err = s.quoteMerchantRepo.DeleteByID(dbc, qm.ID)
+
+			if err != nil {
+				s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " " + err.Error()))
+				dbc.TxRollback()
+				return err
+			}
+		}
+
+		// delete quote item
+		filterItem := map[string]interface{}{
+			"arr_quote_merchant_id": arrQuoteMerchantID,
+		}
+		quoteItems, _, err := s.quoteItemRepo.FindByParams(dbc, filterItem, false, 100, 1)
+		if err != nil {
+			s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " " + err.Error()))
+			dbc.TxRollback()
+			return err
+		}
+		if quoteItems != nil {
+			for _, item := range *quoteItems {
+				err := s.quoteItemRepo.DeleteByID(dbc, item.ID)
+				if err != nil {
+					s.infra.Log.WithContext(ctx).Error(errors.New(errMsgPrefix + " " + err.Error()))
+					dbc.TxRollback()
+					return err
+				}
+			}
+		}
+	}
+	dbc.TxCommit()
+
+	return nil
 }

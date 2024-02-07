@@ -73,13 +73,14 @@ func (r *merchantProductRepository) FindFirstDetailMerchantProduct(dbc *base.DBC
 		}
 	}
 	querySql := `
-			SELECT DISTINCT (p.id) AS id, p.sku AS sku, mp.merchant_sku AS merchant_sku,
-			mp.merchant_included_item AS merchant_included_item, p.name AS name, p.slug AS slug, 
+			SELECT DISTINCT (p.id) AS id, p.sku AS sku, mp.merchant_sku AS merchant_sku, mp.merchant_included_item AS merchant_included_item,
+			p.name AS name, p.slug AS slug, mp.stock as stock, mp.max_purchase_qty as max_purchase_qty,
 			p.weight AS weight, p.brand_code AS brand_code, p.product_kn AS product_kn, p.product_kalbe AS product_kalbe,
 			p.base_point AS base_point, p.base_price AS base_price, p.type_id AS product_type, 
 			p.attribute_set_id AS attribute_set_id, 0 AS reward_point_sell_product, 
 			mpp.special_price_start_time AS special_price_start_time, mpp.special_price_end_time AS special_price_end_time, mpp.selling_price AS selling_price,
-			mpp.special_price AS special_price 
+			mpp.special_price AS special_price, m.status as merchant_status, m.merchant_name as merchant_name, m.id as merchant_id,
+			p.status as product_status, p.is_active AS product_is_active, mp.status as merchant_product_status
 			FROM product_flat AS p  
 			INNER JOIN merchant_product AS mp ON mp.product_id = p.id 
 			INNER JOIN merchant AS m ON m.id = mp.merchant_id 

@@ -26,3 +26,8 @@ type QuoteRs struct {
 	OrderQuoteMerchant *[]QuoteMerchantRs `json:"OrderQuoteMerchant"`
 	OrderQuoteReceipt  *json.RawMessage   `json:"OrderQuoteReceipt"`
 }
+
+type QuoteCreateRs struct {
+	ID        uint64 `json:"id"`
+	QuoteCode string `json:"quote_code"`
+}

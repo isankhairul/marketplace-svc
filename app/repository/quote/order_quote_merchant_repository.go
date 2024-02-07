@@ -18,6 +18,7 @@ type OrderQuoteMerchantRepository interface {
 	FindFirstByParams(dbc *base.DBContext, filter map[string]interface{}, isPreload bool) (*entity.OrderQuoteMerchant, error)
 	FindByParams(dbc *base.DBContext, filter map[string]interface{}, isPreload bool, limit int, page int) (*[]entity.OrderQuoteMerchant, *modelbase.Pagination, error)
 	UpdateByID(dbc *base.DBContext, id uint64, data entity.OrderQuoteMerchant) error
+	DeleteByID(dbc *base.DBContext, id uint64) error
 }
 
 func NewOrderQuoteMerchantRepository(br base.BaseRepository) OrderQuoteMerchantRepository {
@@ -92,7 +93,7 @@ func (r *orderQuoteMerchantRepository) FindFirstByParams(dbc *base.DBContext, fi
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, err
+			return nil, nil
 		}
 		return nil, err
 	}
@@ -143,7 +144,7 @@ func (r *orderQuoteMerchantRepository) FindByParams(dbc *base.DBContext, filter 
 			}).
 			Preload("OrderQuoteShipping").
 			Preload("OrderQuoteShipping.ShippingProvider", func(db *gorm.DB) *gorm.DB {
-				return db.Select("id", "shipping_provider_type_id", "shipping_provider_duration_id", "code", "name")
+				return db.Select("id", "shipping_provider_type_id", "shipping_provider_duration_id", "code", "name", "logo")
 			}).
 			Preload("OrderQuoteShipping.ShippingProvider.ShippingProviderDuration", func(db *gorm.DB) *gorm.DB {
 				return db.Select("id", "name", "duration", "duration_label")
@@ -176,6 +177,17 @@ func (r *orderQuoteMerchantRepository) UpdateByID(dbc *base.DBContext, id uint64
 		Select("*").Omit("id", "created_at").
 		Where("id = ?", id).
 		Updates(data).
+		Error
+	return err
+}
+
+func (r *orderQuoteMerchantRepository) DeleteByID(dbc *base.DBContext, id uint64) error {
+	if id == 0 {
+		return errors.New("id is required")
+	}
+	err := dbc.DB.WithContext(dbc.Context).
+		Where("id = ?", id).
+		Delete(entity.OrderQuoteMerchant{}).
 		Error
 	return err
 }

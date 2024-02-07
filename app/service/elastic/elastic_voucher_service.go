@@ -239,7 +239,7 @@ func (s elasticVoucherServiceImpl) getIndexName() (string, error) {
 
 func (s elasticVoucherServiceImpl) transformSearch(ctx context.Context, rs responseelastic.SearchResponse, fields []string, input requestelastic.VoucherRequest) []map[string]interface{} {
 	var response []map[string]interface{}
-	var customerID int64
+	var customerID uint64
 	user, isValid := middleware.IsAuthContext(ctx)
 	if isValid && user.CustomerID != 0 {
 		customerID = user.CustomerID

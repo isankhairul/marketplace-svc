@@ -54,7 +54,7 @@ type JWTInfo struct {
 	Email         string `json:"-"`
 	ID            string `json:"-"`
 	IsVerified    bool   `json:"-"`
-	CustomerID    int64  `json:"-"`
+	CustomerID    uint64 `json:"-"`
 	GroupID       int    `json:"-"`
 }
 
@@ -150,7 +150,7 @@ func ExtractToken(bearerToken string) (*JWTInfo, error) {
 	claimsJWT.Phone = fmt.Sprintf("%v", mapClaims["phone"])
 	claimsJWT.Email = fmt.Sprintf("%v", mapClaims["email"])
 	claimsJWT.ID = fmt.Sprintf("%v", claimID)
-	claimsJWT.CustomerID = customerID
+	claimsJWT.CustomerID = uint64(customerID)
 	claimsJWT.GroupID = groupID
 
 	return &claimsJWT, nil

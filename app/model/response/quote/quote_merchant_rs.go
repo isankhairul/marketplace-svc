@@ -3,6 +3,7 @@ package responsequote
 import (
 	"marketplace-svc/app"
 	entity "marketplace-svc/app/model/entity/quote"
+	"marketplace-svc/pkg/util"
 )
 
 type QuoteMerchantRs struct {
@@ -45,7 +46,7 @@ func (qr QuoteMerchantRs) Transform(qm *entity.OrderQuoteMerchant, infra app.Inf
 		ID:                     qm.ID,
 		MerchantID:             qm.MerchantID,
 		MerchantTypeID:         qm.MerchantTypeID,
-		Image:                  infra.Config.URL.BaseImageURL + qm.Merchant.Image,
+		Image:                  util.AddImageSuffix(infra.Config.URL.BaseImageURL+qm.Merchant.Image, infra.Config.Server.ImageSuffix),
 		Slug:                   qm.Merchant.Slug,
 		Status:                 qm.Merchant.Status,
 		Name:                   qm.Merchant.MerchantName,
@@ -62,7 +63,7 @@ func (qr QuoteMerchantRs) Transform(qm *entity.OrderQuoteMerchant, infra app.Inf
 		DiscountAmount:         qm.DiscountAmount,
 		ShippingDiscountAmount: qm.ShippingDiscountAmount,
 		AdminFeeCalculation:    qm.AdminFeeCalculation,
-		OrderQuoteShipping:     QuoteShippingRs{}.Transform(qm.OrderQuoteShipping, infra.Config.URL.BaseImageURL),
+		OrderQuoteShipping:     QuoteShippingRs{}.Transform(qm.OrderQuoteShipping, infra.Config.URL.BaseImageURL, infra.Config.Server.ImageSuffix),
 	}
 
 	return &response

@@ -3,6 +3,7 @@ package util
 import (
 	"errors"
 	"net/http"
+	"path/filepath"
 	"strings"
 )
 
@@ -75,4 +76,20 @@ func (s StructValidationImage) ValidateSizeAndMime() error {
 		return err
 	}
 	return nil
+}
+
+func IsImageSvgWebp(filename string) bool {
+	extension := filepath.Ext(filename)
+	// Check if the file extension is .svg or .webp
+	if strings.ToLower(extension) == "svg" || strings.ToLower(extension) == "webp" {
+		return true
+	}
+	return false
+}
+
+func AddImageSuffix(filename string, suffix string) string {
+	if IsImageSvgWebp(filename) {
+		return filename
+	}
+	return filename + suffix
 }

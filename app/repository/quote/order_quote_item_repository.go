@@ -24,6 +24,7 @@ type OrderQuoteItemRepository interface {
 	FindByParams(dbc *base.DBContext, filter map[string]interface{}, isPreload bool, limit int, page int) (*[]entity.OrderQuoteItem, *modelbase.Pagination, error)
 	UpdateByID(dbc *base.DBContext, id uint64, data entity.OrderQuoteItem) error
 	FindRawByParams(dbc *base.DBContext, filter map[string]interface{}) (*[]entity.OrderQuoteItem, error)
+	DeleteByID(dbc *base.DBContext, id uint64) error
 }
 
 func NewOrderQuoteItemRepository(br base.BaseRepository) OrderQuoteItemRepository {
@@ -113,6 +114,9 @@ func (r *orderQuoteItemRepository) FindByParams(dbc *base.DBContext, filter map[
 		}
 		if key == "quote_merchant_id" && v != "" {
 			query = query.Where("quote_merchant_id = ?", v.(uint64))
+		}
+		if key == "arr_quote_merchant_id" && v != "" {
+			query = query.Where("quote_merchant_id in ?", v.([]uint64))
 		}
 	}
 	if isPreload {
@@ -232,6 +236,17 @@ func (r *orderQuoteItemRepository) UpdateByID(dbc *base.DBContext, id uint64, da
 		Select("*").Omit("id", "created_at").
 		Where("id = ?", id).
 		Updates(data).
+		Error
+	return err
+}
+
+func (r *orderQuoteItemRepository) DeleteByID(dbc *base.DBContext, id uint64) error {
+	if id == 0 {
+		return errors.New("id is required")
+	}
+	err := dbc.DB.WithContext(dbc.Context).
+		Where("id = ?", id).
+		Delete(entity.OrderQuoteItem{}).
 		Error
 	return err
 }

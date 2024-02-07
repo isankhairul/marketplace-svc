@@ -1,6 +1,9 @@
 package responsequote
 
-import entity "marketplace-svc/app/model/entity/quote"
+import (
+	entity "marketplace-svc/app/model/entity/quote"
+	"marketplace-svc/pkg/util"
+)
 
 type QuotePaymentRs struct {
 	PaymentMethodID       uint64  `json:"payment_method_id,omitempty"`
@@ -12,7 +15,7 @@ type QuotePaymentRs struct {
 	PaymentLogo           string  `json:"payment_logo,omitempty"`
 }
 
-func (qr QuotePaymentRs) Transform(qp *entity.OrderQuotePayment, baseImageURL string) []QuotePaymentRs {
+func (qr QuotePaymentRs) Transform(qp *entity.OrderQuotePayment, baseImageURL string, suffix string) []QuotePaymentRs {
 	var response []QuotePaymentRs //nolint:prealloc
 	if qp == nil || qp.ID == 0 {
 		return nil
@@ -26,7 +29,7 @@ func (qr QuotePaymentRs) Transform(qp *entity.OrderQuotePayment, baseImageURL st
 		MinimumAmount:         qp.PaymentMethod.MinimumAmount,
 		PaymentMethodTypeName: qp.PaymentMethod.PaymentMethodType.Name,
 		PaymentMethodTypeID:   qp.PaymentMethod.PaymentMethodTypeID,
-		PaymentLogo:           baseImageURL + qp.PaymentMethod.Logo,
+		PaymentLogo:           util.AddImageSuffix(baseImageURL+qp.PaymentMethod.Logo, suffix),
 	})
 
 	return response

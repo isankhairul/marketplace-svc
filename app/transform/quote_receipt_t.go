@@ -10,6 +10,7 @@ import (
 	repocatalog "marketplace-svc/app/repository/catalog"
 	repomerchant "marketplace-svc/app/repository/merchant"
 	repoquote "marketplace-svc/app/repository/quote"
+	"marketplace-svc/pkg/util"
 	"sync"
 )
 
@@ -32,7 +33,7 @@ func (s QuoteReceiptTransform) TransformQuote(ctx context.Context, quote *entity
 	if nil == quote {
 		return nil
 	}
-	var subTotal, totalQty, totalPointEarned, totalPointSpent, totalWeight, totalDiscount, grandTotal float64
+	var subTotal, totalQty, totalWeight, totalDiscount, grandTotal float64
 	var arrQuoteMerchantID []uint64
 
 	dbc := repository.DBContext{DB: s.baseRepo.GetDB(), Context: ctx}
@@ -116,8 +117,6 @@ func (s QuoteReceiptTransform) TransformQuote(ctx context.Context, quote *entity
 		if quoteItem.Selected {
 			subTotal += float64(float64(quoteItem.Quantity) * quoteItem.Price)
 			totalQty += float64(quoteItem.Quantity)
-			totalPointEarned += float64(quoteItem.PointEarned)
-			totalPointSpent += float64(quoteItem.PointSpent)
 			totalWeight += float64(float64(quoteItem.Quantity) * quoteItem.Weight)
 			totalDiscount += float64(quoteItem.DiscountAmount)
 		}
@@ -163,7 +162,7 @@ func (s QuoteReceiptTransform) asyncGetQuotePayment(ctx context.Context, quoteID
 		return
 	}
 
-	chanQ <- responsequote.QuotePaymentRs{}.Transform(quotePayment, s.infra.Config.URL.BaseImageURL)
+	chanQ <- responsequote.QuotePaymentRs{}.Transform(quotePayment, s.infra.Config.URL.BaseImageURL, s.infra.Config.Server.ImageSuffix)
 }
 
 func (s QuoteReceiptTransform) asyncGetQuoteAddress(ctx context.Context, quoteID uint64, chanQ chan<- []responsequote.QuoteAddressRs) {
@@ -227,9 +226,9 @@ func (s QuoteReceiptTransform) asyncGetQuoteItem(ctx context.Context, arrQuoteMe
 		return
 	}
 
-	dbc := repository.DBContext{DB: s.baseRepo.GetDB(), Context: ctx}
+	dbc := repository.NewDBContext(s.baseRepo.GetDB(), ctx)
 	quoteItemRepo := repoquote.NewOrderQuoteItemRepository(s.baseRepo)
-	quoteItem, err := quoteItemRepo.FindRawByParams(&dbc, map[string]interface{}{"arr_quote_merchant_id": arrQuoteMerchantID})
+	quoteItem, err := quoteItemRepo.FindRawByParams(dbc, map[string]interface{}{"arr_quote_merchant_id": arrQuoteMerchantID})
 	if err != nil {
 		s.infra.Log.WithContext(ctx).Error(err)
 		chanQ <- nil
@@ -245,25 +244,34 @@ func (s QuoteReceiptTransform) asyncGetQuoteItem(ctx context.Context, arrQuoteMe
 		for _, qi := range *quoteItem {
 			go func(qi entityquote.OrderQuoteItem) {
 				defer wg.Done()
+				dbc := repository.NewDBContext(s.baseRepo.GetDB(), ctx)
 				mpRepo := repomerchant.NewMerchantProductRepository(s.baseRepo)
 				pcRepo := repocatalog.NewProductCategoryRepository(s.baseRepo)
+				piRepo := repocatalog.NewProductImageRepository(s.baseRepo)
 
 				filterMp := map[string]interface{}{
 					"merchant_id":  qi.Merchant.ID,
 					"product_sku":  qi.ProductSku,
 					"merchant_sku": qi.MerchantSku,
 				}
-				mp, err := mpRepo.FindFirstByParams(&dbc, filterMp, true)
+				mp, err := mpRepo.FindFirstByParams(dbc, filterMp, true)
 				if err != nil || mp == nil {
 					chanQI <- responsequote.QuoteItemRs{}
 					return
 				}
-				arrCategory, _ := pcRepo.GetCategoryMenu(&dbc, qi.ProductID, 1)
-				image := ""
-				if qi.Product.ProductImage != nil {
-					firstProductImage := *qi.Product.ProductImage
-					image = s.infra.Config.URL.BaseImageURL + firstProductImage[0].ImageThumbnail
+
+				arrCategory, _ := pcRepo.GetCategoryMenu(dbc, qi.ProductID, 1)
+				filterProductImage := map[string]interface{}{
+					"product_id": qi.ProductID,
+					"status":     true,
+					"is_default": 1,
 				}
+				productImage, _ := piRepo.FindFirstByParams(dbc, filterProductImage)
+				image := ""
+				if productImage != nil {
+					image = s.infra.Config.URL.BaseImageURL + productImage.ImageThumbnail
+				}
+				image = util.AddImageSuffix(image, s.infra.Config.Server.ImageSuffix)
 
 				chanQI <- *responsequote.QuoteItemRs{}.Transform(&qi, *qi.Merchant, *mp, arrCategory, image)
 			}(qi)
